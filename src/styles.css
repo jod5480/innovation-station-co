@@ -142,3 +142,289 @@
     color: var(--color-foreground);
   }
 }
+
+@layer base {
+  :root {
+    /* Apple SF Pro & Google Sans / Plus Jakarta / Outfit typography system */
+    --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "Google Sans", "Outfit", "Plus Jakarta Sans", system-ui, sans-serif;
+    --font-google: "Outfit", "Plus Jakarta Sans", "Google Sans", -apple-system, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", "Outfit", "Google Sans", "Plus Jakarta Sans", sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "Plus Jakarta Sans", "Outfit", system-ui, sans-serif;
+    --font-mono-ios: "SF Mono", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
+
+    /* Now Playing Cinema Orange & Midnight Slate Theme System (Dark Mode First) */
+    --cinema-orange: #FF6B00;
+    --cinema-orange-hover: #E05300;
+    --cinema-orange-light: #FF8533;
+    --cinema-amber: #FFB800;
+    --cinema-amber-hover: #F59E0B;
+    --cinema-dark: #0A0E17;
+    --cinema-card: #121826;
+    --cinema-card-elevated: #182236;
+    --cinema-secondary: #94A3B8;
+
+    /* Semantic Theme Aliases */
+    --gold-yellow: #FF6B00;
+    --gold-yellow-bright: #FF8533;
+    --gold-yellow-hover: #E05300;
+    --fluorescent-green: #FFB800;
+    --fluorescent-green-hover: #F59E0B;
+
+    --monsoon-blue: #FF6B00;
+    --monsoon-blue-hover: #E05300;
+    --monsoon-azure: #FFB800;
+    --monsoon-dark: #0A0E17;
+    --monsoon-card: #121826;
+    --monsoon-secondary: #94A3B8;
+
+    --tiktok-red: #FF6B00;
+    --tiktok-cyan: #FFB800;
+    --tiktok-black: #0A0E17;
+    --tiktok-card: #121826;
+    --tiktok-secondary: #94A3B8;
+  }
+  
+  body {
+    font-family: var(--font-body);
+    letter-spacing: -0.012em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    background-color: #0A0E17;
+    color: #FFFFFF;
+  }
+  
+  .font-brand {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+  }
+
+  .font-apple {
+    font-family: var(--font-apple);
+  }
+
+  .font-google {
+    font-family: var(--font-google);
+  }
+
+  .font-mono-ios {
+    font-family: var(--font-mono-ios);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Now Playing — Cinema Orange & Golden Amber Brand Aesthetics */
+.cinema-orange-glow {
+  text-shadow: 0 0 12px rgba(255, 107, 0, 0.65), 0 0 24px rgba(255, 133, 51, 0.4);
+}
+
+.cinema-amber-glow {
+  text-shadow: 0 0 12px rgba(255, 184, 0, 0.65), 0 0 24px rgba(255, 184, 0, 0.4);
+}
+
+.cinema-gold-glow {
+  text-shadow: 0 0 12px rgba(255, 107, 0, 0.65), 0 0 24px rgba(255, 184, 0, 0.4);
+}
+
+.cinema-green-glow {
+  text-shadow: 0 0 12px rgba(255, 184, 0, 0.65), 0 0 24px rgba(255, 184, 0, 0.4);
+}
+
+.monsoon-glow {
+  text-shadow: 0 0 12px rgba(255, 107, 0, 0.65), 0 0 24px rgba(255, 184, 0, 0.4);
+}
+
+.monsoon-chromatic-box {
+  box-shadow: -2px 0px 0px #FFB800, 2px 0px 0px #FF6B00;
+}
+
+.tiktok-chromatic {
+  text-shadow: -1px -0.5px 0px rgba(255, 184, 0, 0.8), 1px 0.5px 0px rgba(255, 107, 0, 0.8);
+}
+
+.tiktok-chromatic-box {
+  box-shadow: -2px 0px 0px #FFB800, 2px 0px 0px #FF6B00;
+}
+
+.tiktok-card {
+  background-color: #121826;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tiktok-card:hover {
+  border-color: rgba(255, 107, 0, 0.35);
+}
+
+.tiktok-btn-primary {
+  background-color: #FF6B00;
+  color: #FFFFFF;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.tiktok-btn-primary:hover {
+  background-color: #E05300;
+}
+
+.tiktok-btn-primary:active {
+  transform: scale(0.96);
+}
+
+/* Now Playing — Cinema See More outline button */
+.cinema-btn-outline {
+  border: 1.5px solid #FF6B00;
+  color: #FF6B00;
+  background-color: rgba(255, 107, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.cinema-btn-outline:hover {
+  background-color: #FF6B00;
+  color: #FFFFFF;
+}
+
+/* iOS Glassmorphism & System Surfaces */
+.ios-glass-dark {
+  background-color: rgba(10, 14, 23, 0.94);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.ios-glass-light {
+  background-color: rgba(250, 249, 245, 0.94);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-color: rgba(11, 15, 21, 0.08);
+}
+
+/* iOS Inset Grouped Table & Card */
+.ios-card {
+  border-radius: 20px;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* iOS Interactive Touch States (Haptic-feel click) */
+.ios-press {
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s ease;
+}
+.ios-press:active {
+  transform: scale(0.96);
+  opacity: 0.82;
+}
+
+/* iOS Segmented Control slider feel */
+.ios-segmented {
+  background-color: rgba(120, 120, 128, 0.2);
+  border-radius: 12px;
+  padding: 3px;
+}
+
+/* iOS Home Indicator pill */
+.ios-home-indicator {
+  width: 134px;
+  height: 5px;
+  border-radius: 9999px;
+  background-color: currentColor;
+  opacity: 0.4;
+}
+
+/* Cinema aspect ratio guidelines & film aesthetics */
+.aspect-cinemascope {
+  aspect-ratio: 2.39 / 1;
+}
+
+.aspect-instagram {
+  aspect-ratio: 4 / 5;
+}
+
+/* Custom discreet scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.4);
+}
+
+/* Heart pop animation */
+@keyframes heartPop {
+  0% {
+    transform: scale(0) rotate(-15deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+.animate-heart-pop {
+  animation: heartPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Film reel perforation styling */
+.film-strip-border {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.15) 35%, transparent 40%);
+  background-size: 16px 16px;
+}
+
+/* =========================================================
+   DYNAMIC PALETTE THEME SYSTEM
+   1. Now Playing (Cinema Orange & Golden Amber) -> DEFAULT
+   2. Neon Noir (Golden Yellow & Fluorescent Green)
+   3. Monsoon Blue & Rice White
+   ========================================================= */
+
+/* NEON NOIR THEME OVERRIDES */
+[data-theme="neon-noir"] {
+  --cinema-orange: #F59E0B;
+  --cinema-orange-hover: #D97706;
+  --cinema-amber: #2BFB60;
+  --cinema-dark: #0B0F15;
+  --cinema-card: #121820;
+}
+[data-theme="neon-noir"] [class*="bg-[#FF6B00]"] {
+  background-color: #F59E0B !important;
+}
+[data-theme="neon-noir"] [class*="text-[#FF6B00]"] {
+  color: #F59E0B !important;
+}
+[data-theme="neon-noir"] [class*="border-[#FF6B00]"] {
+  border-color: #F59E0B !important;
+}
+[data-theme="neon-noir"] [class*="fill-[#FF6B00]"] {
+  fill: #F59E0B !important;
+}
+[data-theme="neon-noir"] [class*="text-[#FFB800]"] {
+  color: #2BFB60 !important;
+}
+[data-theme="neon-noir"] [class*="bg-[#FFB800]"] {
+  background-color: #2BFB60 !important;
+}
+[data-theme="neon-noir"] [class*="border-[#FFB800]"] {
+  border-color: #2BFB60 !important;
+}
+[data-theme="neon-noir"] [class*="fill-[#FFB800]"] {
+  fill: #2BFB60 !important;
+}
+[data-theme="neon-noir"] [class*="bg-[#0A0E17]"] {
+  background-color: #0B0F15 !important;
+}
+[data-theme="neon-noir"] [class*="bg-[#121826]"] {
+  background-color: #121820 !important;
+}
+
+
