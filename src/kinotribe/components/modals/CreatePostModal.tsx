@@ -126,17 +126,16 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [castingPosterAspect, setCastingPosterAspect] = useState<'2:3' | '3:4' | '16:9'>('2:3');
   const [customPosterInput, setCustomPosterInput] = useState<string>('');
 
-  const handlePosterFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePosterFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setCastingPosterUrl(reader.result);
-        setCastingPosterChoice('poster');
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadMedia(file);
+      setCastingPosterUrl(url);
+      setCastingPosterChoice('poster');
+    } catch (err) {
+      alert('Upload failed: ' + (err instanceof Error ? err.message : ''));
+    }
   };
 
   const handleRoleToggle = (role: CinemaRole) => {

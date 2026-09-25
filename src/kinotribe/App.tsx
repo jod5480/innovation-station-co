@@ -742,17 +742,27 @@ function KinoApp({ me, initial }: { me: User; initial: api.FeedData }) {
                   isFollowing={followingIds.includes(viewedProfileUser.id)}
                   onFollowToggle={handleFollowToggle}
                   onOpenMessage={(u) => {
-                    setIsMessagesOpen(true);
+                    handleOpenMessage(u);
                   }}
                   onPostClick={(p) => setActivePostForDetail(p)}
                   onUpdateProfile={(updated) => {
                     setCurrentUser(updated);
                     setViewedProfileUser(updated);
+                    api
+                      .updateProfile(me.id, {
+                        name: updated.name,
+                        bio: updated.bio,
+                        roles: updated.roles,
+                        experience_level: updated.experienceLevel,
+                        showreel_video_url: updated.showreelVideoUrl || null,
+                        imdb_url: updated.imdbUrl || null,
+                        portfolio_url: updated.portfolioUrl || null,
+                      })
+                      .catch((e) => alert('Could not save profile: ' + e.message));
                   }}
                   onOpenApply={(p) => setActivePostForApply(p)}
-                  onOpenAuthModal={(mode) => {
-                    setAuthInitialView(mode || 'signup');
-                    setIsAuthOpen(true);
+                  onOpenAuthModal={async () => {
+                    if (confirm('Sign out of KinoTribe?')) await supabase.auth.signOut();
                   }}
                   feedMode={feedMode}
                   activeBrowseCountry={activeBrowseCountry}
