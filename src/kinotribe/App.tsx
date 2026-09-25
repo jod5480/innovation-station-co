@@ -1176,7 +1176,7 @@ function KinoApp({ me, initial }: { me: User; initial: api.FeedData }) {
           } else {
             handleUserClick(n.actor);
           }
-          // Mark as read
+          api.markNotificationRead(n.id);
           setNotifications((prev) =>
             prev.map((item) => (item.id === n.id ? { ...item, read: true } : item))
           );
