@@ -157,64 +157,47 @@ function KinoApp({ me, initial }: { me: User; initial: api.FeedData }) {
   const unreadNotifsCount = notifications.filter((n) => !n.read).length;
   const unreadMessagesCount = conversations.reduce((acc, c) => acc + c.unreadCount, 0);
 
+  const refresh = async () => {
+    const d = await api.loadEverything(me.id);
+    setPosts(d.posts);
+    setStories(d.stories);
+    setNotifications(d.notifications);
+    setConversations(d.conversations);
+    setMyApplications(d.applications);
+    setFollowingIds(d.followingIds);
+  };
+
   // Like toggle handler
   const handleLikeToggle = (postId: string) => {
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return;
+    const isLiked = !target.isLiked;
     setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          const isLiked = !p.isLiked;
-          return {
-            ...p,
-            isLiked,
-            likes: isLiked ? p.likes + 1 : p.likes - 1,
-          };
-        }
-        return p;
-      })
+      prev.map((p) =>
+        p.id === postId ? { ...p, isLiked, likes: isLiked ? p.likes + 1 : p.likes - 1 } : p
+      )
     );
+    api.toggleLike(postId, me.id, isLiked);
   };
 
   // Save/bookmark toggle handler
   const handleSaveToggle = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          return { ...p, isSaved: !p.isSaved };
-        }
-        return p;
-      })
-    );
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return;
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, isSaved: !p.isSaved } : p)));
+    api.toggleSave(postId, me.id, !target.isSaved);
   };
 
   // Follow/Unfollow toggle handler
   const handleFollowToggle = (userId: string) => {
-    setFollowingIds((prev) => {
-      const exists = prev.includes(userId);
-      if (exists) {
-        return prev.filter((id) => id !== userId);
-      } else {
-        // Add new follower notification
-        const targetUser = MOCK_USERS.find((u) => u.id === userId);
-        if (targetUser) {
-          setNotifications((n) => [
-            {
-              id: `notif_follow_${Date.now()}`,
-              type: 'new_follower',
-              actor: targetUser,
-              message: 'followed you back on Kinotribe.',
-              timeAgo: 'Just now',
-              read: false,
-            },
-            ...n,
-          ]);
-        }
-        return [...prev, userId];
-      }
-    });
+    if (userId === me.id) return;
+    const follow = !followingIds.includes(userId);
+    setFollowingIds((prev) => (follow ? [...prev, userId] : prev.filter((id) => id !== userId)));
+    api.toggleFollow(userId, me.id, follow);
   };
 
   // Add Comment handler
-  const handleAddComment = (postId: string, text: string) => {
+  const handleAddComment = async (postId: string, text: string) => {
     const newComment = {
       id: `c_${Date.now()}`,
       author: currentUser,
@@ -222,97 +205,93 @@ function KinoApp({ me, initial }: { me: User; initial: api.FeedData }) {
       createdAt: 'Just now',
       likes: 0,
     };
-
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            commentsCount: p.commentsCount + 1,
-            comments: [newComment, ...p.comments],
-          };
-        }
-        return p;
-      })
-    );
-
-    // Also update activePostForComments if open
-    if (activePostForComments && activePostForComments.id === postId) {
-      setActivePostForComments((prev) =>
-        prev
-          ? {
-              ...prev,
-              commentsCount: prev.commentsCount + 1,
-              comments: [newComment, ...prev.comments],
-            }
-          : null
-      );
+    const add = (p: Post) =>
+      p.id === postId
+        ? { ...p, commentsCount: p.commentsCount + 1, comments: [newComment, ...p.comments] }
+        : p;
+    setPosts((prev) => prev.map(add));
+    setActivePostForComments((prev) => (prev ? add(prev) : null));
+    try {
+      await api.addComment(postId, me.id, text);
+      const post = posts.find((p) => p.id === postId);
+      if (post && post.author.id !== me.id) {
+        await supabase.from('notifications').insert({
+          user_id: post.author.id,
+          actor_id: me.id,
+          type: 'comment',
+          message: `commented: "${text.slice(0, 80)}"`,
+          target_post_id: postId,
+        });
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
   // Apply to casting post
-  const handleSubmitApplication = (application: Application) => {
-    setMyApplications((prev) => [application, ...prev]);
-
-    // increment post applicant count
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === application.postId && p.castingDetails) {
-          return {
-            ...p,
-            castingDetails: {
-              ...p.castingDetails,
-              applicationCount: p.castingDetails.applicationCount + 1,
-            },
-          };
-        }
-        return p;
-      })
-    );
-
-    // notification for user
-    setNotifications((prev) => [
-      {
-        id: `notif_app_${Date.now()}`,
-        type: 'application_status',
-        actor: currentUser,
-        message: `Your audition reel was sent for "${application.projectTitle}".`,
-        timeAgo: 'Just now',
-        read: false,
-      },
-      ...prev,
-    ]);
+  const handleSubmitApplication = async (application: Application) => {
+    const post = posts.find((p) => p.id === application.postId);
+    try {
+      await api.submitApplication(application, me.id, post?.author.id ?? me.id);
+      await refresh();
+    } catch (e) {
+      alert(e instanceof Error && e.message.includes('duplicate') ? 'You already applied to this casting call.' : 'Could not submit application.');
+    }
   };
 
   // Create post handler
-  const handlePostCreated = (newPost: Post) => {
-    setPosts((prev) => [newPost, ...prev]);
-    setActiveTab('feed');
+  const handlePostCreated = async (newPost: Post) => {
+    try {
+      await api.createPost(newPost, me.id);
+      await refresh();
+      setActiveTab('feed');
+    } catch (e) {
+      alert('Could not publish post: ' + (e instanceof Error ? e.message : ''));
+    }
   };
 
   // Send Direct Message
-  const handleSendMessage = (conversationId: string, text: string) => {
+  const handleSendMessage = async (conversationId: string, text: string) => {
     setConversations((prev) =>
-      prev.map((c) => {
-        if (c.conversationId === conversationId) {
-          const newMsg = {
-            id: `msg_${Date.now()}`,
-            senderId: currentUser.id,
-            text,
-            time: 'Just now',
-            isMe: true,
-          };
-          return {
-            ...c,
-            lastMessage: text,
-            lastMessageTime: 'Just now',
-            messages: [...c.messages, newMsg],
-          };
-        }
-        return c;
-      })
+      prev.map((c) =>
+        c.conversationId === conversationId
+          ? {
+              ...c,
+              lastMessage: text,
+              lastMessageTime: 'Just now',
+              messages: [
+                ...c.messages,
+                { id: `msg_${Date.now()}`, senderId: me.id, text, time: 'Just now', isMe: true },
+              ],
+            }
+          : c
+      )
     );
+    await api.sendMessage(conversationId, me.id, text);
   };
+
+  const handleOpenMessage = async (u: User) => {
+    if (u.id !== me.id) {
+      await api.getOrCreateConversation(me.id, u.id);
+      await refresh();
+    }
+    setIsMessagesOpen(true);
+  };
+
+  // Realtime: new messages & notifications
+  useEffect(() => {
+    const ch = supabase
+      .channel('kt-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (p) => {
+        if ((p.new as { sender_id: string }).sender_id !== me.id) refresh();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${me.id}` }, () => refresh())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me.id]);
 
   // User click router
   const handleUserClick = (user: User) => {
