@@ -201,7 +201,7 @@ export async function loadEverything(currentUserId: string): Promise<FeedData> {
   const posts: Post[] = (postsRes.data ?? []).map((p) => {
     const likers = likesByPost.get(p.id) ?? [];
     const casting = p.casting_details
-      ? { ...p.casting_details, applicationCount: appsByPost.get(p.id) ?? 0 }
+      ? { ...(p.casting_details as object), applicationCount: appsByPost.get(p.id) ?? 0 }
       : undefined;
     return {
       id: p.id,
@@ -236,7 +236,7 @@ export async function loadEverything(currentUserId: string): Promise<FeedData> {
 
   const notifications: NotificationItem[] = (notifsRes.data ?? []).map((n) => ({
     id: n.id,
-    type: n.type,
+    type: n.type as NotificationItem["type"],
     actor: ghost(n.actor_id ?? currentUserId),
     message: n.message,
     targetPostId: n.target_post_id ?? undefined,
@@ -286,7 +286,7 @@ export async function loadEverything(currentUserId: string): Promise<FeedData> {
       selectedRole: a.selected_role as CinemaRole,
       coverNote: a.cover_note,
       portfolioUrl: a.portfolio_url,
-      status: a.status,
+      status: a.status as Application["status"],
       submittedAt: timeAgo(a.created_at),
     }));
 
@@ -352,7 +352,7 @@ export async function createPost(post: Post, userId: string) {
       author_id: userId,
       type: post.type,
       content: post.content,
-      casting_details: post.castingDetails ?? null,
+      casting_details: (post.castingDetails ?? null) as never,
       country: post.country,
       country_code: post.countryCode,
       language: post.language,
@@ -439,7 +439,7 @@ export async function markConversationRead(conversationId: string, userId: strin
 }
 
 export async function updateProfile(userId: string, patch: Record<string, unknown>) {
-  const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
+  const { error } = await supabase.from("profiles").update(patch as never).eq("id", userId);
   if (error) throw error;
 }
 
