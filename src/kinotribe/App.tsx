@@ -36,13 +36,10 @@ import {
   CinemaRole,
 } from './types';
 
+import { supabase } from '@/integrations/supabase/client';
+import * as api from './lib/api';
+import { AuthGate } from './components/auth/AuthGate';
 import {
-  CURRENT_USER,
-  MOCK_USERS,
-  MOCK_POSTS,
-  MOCK_STORIES,
-  MOCK_NOTIFICATIONS,
-  MOCK_CONVERSATIONS,
   COUNTRIES_DATA,
 } from './data/mockCinemaData';
 
@@ -65,30 +62,60 @@ import { AuthModal } from './components/auth/AuthModal';
 type MainTab = 'feed' | 'explore' | 'casting' | 'profile';
 
 export default function App() {
-  // Persistence key
-  const STORAGE_KEY = 'kinotribe_state_v1';
+  const [session, setSession] = useState<{ userId: string } | null | undefined>(undefined);
+  const [boot, setBoot] = useState<{ me: User; data: api.FeedData } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) =>
+      setSession(data.session ? { userId: data.session.user.id } : null),
+    );
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession((prev) => {
+        const next = s ? { userId: s.user.id } : null;
+        return prev?.userId === next?.userId ? prev : next;
+      });
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    setBoot(null);
+    if (!session) return;
+    let cancelled = false;
+    (async () => {
+      const [me, data] = await Promise.all([
+        api.getMyProfile(session.userId),
+        api.loadEverything(session.userId),
+      ]);
+      if (!cancelled && me) setBoot({ me, data });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  if (session === null) return <AuthGate />;
+  if (!boot)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0A0E17] text-neutral-400 text-sm">
+        Loading KinoTribe…
+      </div>
+    );
+  return <KinoApp key={boot.me.id} me={boot.me} initial={boot.data} />;
+}
+
+function KinoApp({ me, initial }: { me: User; initial: api.FeedData }) {
+  const CURRENT_USER = me;
+  const MOCK_USERS = initial.users.filter((u) => u.id !== me.id);
 
   // App state
   const [currentUser, setCurrentUser] = useState<User>(CURRENT_USER);
-  const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
-  const [stories, setStories] = useState<StoryItem[]>(MOCK_STORIES);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
-  const [conversations, setConversations] = useState<DirectMessageConversation[]>(MOCK_CONVERSATIONS);
-  const [myApplications, setMyApplications] = useState<Application[]>([
-    {
-      id: 'app_seed_1',
-      postId: 'post_casting_1',
-      projectTitle: 'Chasing Dusk',
-      applicantId: CURRENT_USER.id,
-      applicant: CURRENT_USER,
-      selectedRole: 'Acting',
-      coverNote: 'Attached my recent dramatic showreel from the Joshua Tree shoot.',
-      portfolioUrl: CURRENT_USER.showreelVideoUrl || '',
-      status: 'Shortlisted',
-      submittedAt: '2 days ago',
-    },
-  ]);
-  const [followingIds, setFollowingIds] = useState<string[]>(['usr_marcus', 'usr_elena']);
+  const [posts, setPosts] = useState<Post[]>(initial.posts);
+  const [stories, setStories] = useState<StoryItem[]>(initial.stories);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(initial.notifications);
+  const [conversations, setConversations] = useState<DirectMessageConversation[]>(initial.conversations);
+  const [myApplications, setMyApplications] = useState<Application[]>(initial.applications);
+  const [followingIds, setFollowingIds] = useState<string[]>(initial.followingIds);
 
   // View navigation
   const [activeTab, setActiveTab] = useState<MainTab>('feed');
