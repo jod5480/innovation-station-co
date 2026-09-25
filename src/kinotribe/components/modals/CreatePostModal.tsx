@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { uploadMedia } from '../../lib/api';
 import {
   X,
   Clapperboard,
