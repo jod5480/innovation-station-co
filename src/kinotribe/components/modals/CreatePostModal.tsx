@@ -1,814 +1,821 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from 'react';
+import { uploadMedia } from '../../lib/api';
 import {
   X,
-  MapPin,
-  Tag,
-  ChevronDown,
   Clapperboard,
+  Camera,
+  Film,
+  FileText,
+  DollarSign,
+  Calendar,
+  Globe,
+  MapPin,
   Sparkles,
-  MessageSquare,
-  Image as ImageIcon,
-  Trash2,
-  Loader2,
-  UserPlus,
-  Users,
-  Crop,
-} from "lucide-react";
-import { User, Post, CinemaRole, ProjectType } from "../../types";
-import { ALL_ROLES, MOCK_USERS } from "../../data/mockCinemaData";
-import { uploadMedia } from "../../lib/api";
-import { ImageCropModal, AllowedPostAspect } from "./ImageCropModal";
+  Plus,
+  CheckCircle2,
+  Briefcase,
+} from 'lucide-react';
+import { User, Post, CinemaRole, ProjectType } from '../../types';
+import { ALL_ROLES, COUNTRIES_DATA, LANGUAGES_LIST } from '../../data/mockCinemaData';
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: User;
   onPostCreated: (post: Post) => void;
-  onPostUpdated?: (post: Post) => void;
-  initialMode?: "regular" | "casting";
-  initialPost?: Post;
-  availableUsers?: User[];
+  initialMode?: 'regular' | 'casting';
 }
+
+const PRESET_CINEMA_IMAGES = [
+  {
+    title: 'Anamorphic 35mm Night Diner',
+    url: 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=1000&auto=format&fit=crop&q=80',
+    spec: 'Cooke Anamorphic /i 40mm · T2.3',
+  },
+  {
+    title: 'Joshua Tree 35mm Horizon',
+    url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1000&auto=format&fit=crop&q=80',
+    spec: 'ARRI 416 Super 16mm · 500T',
+  },
+  {
+    title: 'Parisian Cinema Scouting',
+    url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1000&auto=format&fit=crop&q=80',
+    spec: 'Leica Summilux-C 35mm',
+  },
+  {
+    title: 'Virtual Production LED Stage',
+    url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1000&auto=format&fit=crop&q=80',
+    spec: 'RED V-Raptor XL 8K',
+  },
+];
+
+export const PRESET_CASTING_POSTERS = [
+  {
+    title: 'Chasing Dusk (Indie Desert Drama)',
+    url: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=900&auto=format&fit=crop&q=80',
+    aspect: '2:3' as const,
+    label: 'Desert Sunset',
+  },
+  {
+    title: 'Neon Noir Horizon (Sci-Fi Thriller)',
+    url: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=900&auto=format&fit=crop&q=80',
+    aspect: '2:3' as const,
+    label: 'Cyberpunk Noir',
+  },
+  {
+    title: 'Les Ombres Bleues (French Drama)',
+    url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=900&auto=format&fit=crop&q=80',
+    aspect: '3:4' as const,
+    label: 'Arthouse Drama',
+  },
+  {
+    title: 'Gully Noir (Monsoon Mumbai Street)',
+    url: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=900&auto=format&fit=crop&q=80',
+    aspect: '2:3' as const,
+    label: 'Mumbai Noir',
+  },
+  {
+    title: 'Analog 35mm Clapper (Studio Film)',
+    url: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=900&auto=format&fit=crop&q=80',
+    aspect: '2:3' as const,
+    label: 'Studio Film',
+  },
+  {
+    title: 'The Bell of Deptford (Period Lookbook)',
+    url: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=900&auto=format&fit=crop&q=80',
+    aspect: '16:9' as const,
+    label: 'London Period',
+  },
+];
 
 export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   isOpen,
   onClose,
   currentUser,
   onPostCreated,
-  onPostUpdated,
-  initialMode = "regular",
-  initialPost,
-  availableUsers,
+  initialMode = 'regular',
 }) => {
   if (!isOpen) return null;
 
-  // Core post state
-  const [caption, setCaption] = useState(initialPost?.content.text || "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [postMode, setPostMode] = useState<'regular' | 'casting'>(initialMode);
 
-  // Extras
-  const [location, setLocation] = useState(initialPost?.content.location || "");
-  const [showLocationInput, setShowLocationInput] = useState(false);
-  const [tags, setTags] = useState<string[]>(initialPost?.tags || []);
-  const [tagInput, setTagInput] = useState("");
-  const [showTagInput, setShowTagInput] = useState(false);
+  // Regular post fields
+  const [regularType, setRegularType] = useState<'photo' | 'video' | 'text'>('photo');
+  const [captionText, setCaptionText] = useState('');
+  const [mediaUrl, setMediaUrl] = useState(PRESET_CINEMA_IMAGES[0].url);
+  const [cameraSpec, setCameraSpec] = useState(PRESET_CINEMA_IMAGES[0].spec);
+  const [aspect, setAspect] = useState<'16:9' | '4:5' | '2.39:1' | '1:1'>('16:9');
+  const [addToPortfolio, setAddToPortfolio] = useState(false);
+  const [portfolioRole, setPortfolioRole] = useState<string>(currentUser.roles[0] || 'Cinematography');
 
-  // Tagging People (with ID or Username)
-  const [taggedUsers, setTaggedUsers] = useState<string[]>(initialPost?.taggedUsers || []);
-  const [userInput, setUserInput] = useState("");
-  const [showUserInput, setShowUserInput] = useState(false);
+  // Casting post fields
+  const [projectTitle, setProjectTitle] = useState('');
+  const [projectType, setProjectType] = useState<ProjectType>('Short Film');
+  const [rolesNeeded, setRolesNeeded] = useState<CinemaRole[]>(['Acting']);
+  const [locationStr, setLocationStr] = useState('Los Angeles, CA');
+  const [castingCountry, setCastingCountry] = useState(currentUser.country);
+  const [castingLanguage, setCastingLanguage] = useState(currentUser.languages[0] || 'English');
+  const [compType, setCompType] = useState<'Paid' | 'Unpaid' | 'Negotiable'>('Paid');
+  const [compAmount, setCompAmount] = useState('$500 / day + IMDB credit');
+  const [deadline, setDeadline] = useState('2026-11-15');
+  const [castingDescription, setCastingDescription] = useState('');
+  const [auditionRequirements, setAuditionRequirements] = useState('Submit a 2-minute dramatic reel or monologue.');
 
-  const userPool = availableUsers && availableUsers.length > 0 ? availableUsers : MOCK_USERS;
+  // Casting Artwork: Poster vs No Image (Text-Only Notice)
+  const [castingPosterChoice, setCastingPosterChoice] = useState<'poster' | 'none'>('poster');
+  const [castingPosterUrl, setCastingPosterUrl] = useState<string>(PRESET_CASTING_POSTERS[0].url);
+  const [castingPosterAspect, setCastingPosterAspect] = useState<'2:3' | '3:4' | '16:9'>('2:3');
+  const [customPosterInput, setCustomPosterInput] = useState<string>('');
 
-  const handleAddTaggedUser = (userTag: string) => {
-    const clean = userTag.trim().replace(/^@/, "");
-    if (clean && !taggedUsers.includes(clean)) {
-      setTaggedUsers([...taggedUsers, clean]);
-      setUserInput("");
-    }
-  };
-
-  const handleRemoveTaggedUser = (tagToRemove: string) => {
-    setTaggedUsers(taggedUsers.filter((u) => u !== tagToRemove));
-  };
-
-  const handleUserKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      if (userInput.trim()) {
-        handleAddTaggedUser(userInput.trim());
-      }
-    }
-  };
-
-  const filteredSuggestions = userInput.trim()
-    ? userPool
-        .filter(
-          (u) =>
-            u.id !== currentUser.id &&
-            !taggedUsers.includes(u.username) &&
-            !taggedUsers.includes(u.id),
-        )
-        .filter((u) => {
-          const q = userInput.trim().replace(/^@/, "").toLowerCase();
-          return (
-            u.username.toLowerCase().includes(q) ||
-            u.name.toLowerCase().includes(q) ||
-            u.id.toLowerCase().includes(q)
-          );
-        })
-        .slice(0, 6)
-    : [];
-
-  // Media Attachment (Strictly 1080x1440 & 1920x1080)
-  const [mediaUrl, setMediaUrl] = useState<string | null>(initialPost?.content.mediaUrl || null);
-  const [aspectMode, setAspectMode] = useState<AllowedPostAspect>(
-    initialPost?.content.aspect === "16:9" ? "16:9" : "3:4",
-  );
-  const [imageAspect, setImageAspect] = useState<number | null>(
-    initialPost?.content.aspectRatio || (initialPost?.content.aspect === "16:9" ? 16 / 9 : 3 / 4),
-  );
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Crop & Adjust modal state
-  const [cropSourceImage, setCropSourceImage] = useState<File | string | null>(null);
-  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
-
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePosterFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Strictly enforce image files only - no videos on posts
-    if (!file.type.startsWith("image/")) {
-      setUploadError(
-        "Only photos & images can be added to posts. Videos can be shared via Glimpse.",
-      );
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    setUploadError(null);
-    setCropSourceImage(file);
-    setIsCropModalOpen(true);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleCropComplete = async (
-    croppedFile: File,
-    aspect: AllowedPostAspect,
-    aspectRatioNum: number,
-    _resolutionLabel?: string,
-  ) => {
-    setIsCropModalOpen(false);
-    setIsUploadingImage(true);
-    setUploadError(null);
     try {
-      const url = await uploadMedia(croppedFile);
-      setMediaUrl(url);
-      setAspectMode(aspect);
-      setImageAspect(aspectRatioNum);
+      const url = await uploadMedia(file);
+      setCastingPosterUrl(url);
+      setCastingPosterChoice('poster');
     } catch (err) {
-      console.error("Image upload failed:", err);
-      setUploadError("Could not upload image. Please try again.");
-    } finally {
-      setIsUploadingImage(false);
+      alert('Upload failed: ' + (err instanceof Error ? err.message : ''));
     }
   };
 
-  // Optional Casting details extension
-  const [isCastingMode, setIsCastingMode] = useState(
-    initialPost ? initialPost.type === "casting" : initialMode === "casting",
-  );
-  const [projectTitle, setProjectTitle] = useState(
-    initialPost?.content.title || initialPost?.castingDetails?.projectTitle || "",
-  );
-  const [projectType, setProjectType] = useState<ProjectType>(
-    initialPost?.castingDetails?.projectType || "Short Film",
-  );
-  const [rolesNeeded, setRolesNeeded] = useState<CinemaRole[]>(
-    initialPost?.castingDetails?.rolesNeeded || [currentUser.roles[0] || "Acting"],
-  );
-  const [compType, setCompType] = useState<"Paid" | "Unpaid" | "Negotiable">(
-    initialPost?.castingDetails?.compensationType || "Paid",
-  );
-  const [compAmount, setCompAmount] = useState(
-    initialPost?.castingDetails?.compensationAmount || "$500 / day",
-  );
-  const [deadline, setDeadline] = useState(initialPost?.castingDetails?.deadline || "2026-11-15");
-  const [auditionNote, setAuditionNote] = useState(
-    initialPost?.castingDetails?.requirementsNote || "",
-  );
-  const [languageReq, setLanguageReq] = useState(
-    initialPost?.castingDetails?.languageRequirement || "",
-  );
-
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      const clean = tagInput.trim().replace(/^#/, "");
-      if (clean && !tags.includes(clean)) {
-        setTags([...tags, clean]);
-        setTagInput("");
+  const handleRoleToggle = (role: CinemaRole) => {
+    if (rolesNeeded.includes(role)) {
+      if (rolesNeeded.length > 1) {
+        setRolesNeeded(rolesNeeded.filter((r) => r !== role));
       }
+    } else {
+      setRolesNeeded([...rolesNeeded, role]);
     }
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
-  };
-
-  const canSubmit =
-    !isUploadingImage &&
-    (caption.trim().length > 0 || (isCastingMode && projectTitle.trim().length > 0) || !!mediaUrl);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit || isSubmitting) return;
 
-    setIsSubmitting(true);
-
-    // Only include tags explicitly entered by the user
-    const postTags = tags.map((t) => t.trim().replace(/^#/, "")).filter(Boolean);
-    const manualTagged = taggedUsers.map((u) => u.trim().replace(/^@/, "")).filter(Boolean);
-    const mentionRegex = /@([a-zA-Z0-9_.-]+)/g;
-    const captionMentions = Array.from(caption.matchAll(mentionRegex), (m) => m[1]);
-    const cleanTaggedUsers = Array.from(new Set([...manualTagged, ...captionMentions]));
-
-    const newPost: Post = {
-      id: initialPost ? initialPost.id : `post_${Date.now()}`,
-      authorId: currentUser.id,
-      author: currentUser,
-      createdAt: initialPost ? initialPost.createdAt : "Just now",
-      type: isCastingMode ? "casting" : mediaUrl ? "photo" : "text",
-      country: currentUser.country,
-      countryCode: currentUser.countryCode,
-      language: currentUser.languages[0] || "English",
-      content: {
-        text:
-          caption.trim() ||
-          (isCastingMode ? `Casting call for ${projectTitle || "our upcoming film"}.` : undefined),
-        title: projectTitle.trim() || undefined,
-        location: location.trim() || undefined,
-        mediaUrl: mediaUrl || undefined,
-        mediaType: mediaUrl ? "image" : undefined,
-        aspect: mediaUrl ? aspectMode : "auto",
-        aspectRatio: mediaUrl ? (aspectMode === "16:9" ? 16 / 9 : 3 / 4) : undefined,
-      },
-      castingDetails: isCastingMode
-        ? {
-            projectTitle: projectTitle || "Untitled Production",
-            projectType,
-            rolesNeeded,
-            location: location.trim() || undefined,
-            country: currentUser.country,
-            countryCode: currentUser.countryCode,
-            languageRequirement: languageReq.trim() || "",
-            compensationType: compType,
-            compensationAmount: compAmount,
-            deadline,
-            requirementsNote: auditionNote || "Submit showreel or audition tape.",
-            applicationCount: 0,
-            howToApply: "in_app",
-          }
-        : undefined,
-      likes: initialPost ? initialPost.likes : 0,
-      isLiked: initialPost ? initialPost.isLiked : false,
-      commentsCount: initialPost ? initialPost.commentsCount : 0,
-      comments: initialPost ? initialPost.comments : [],
-      isSaved: initialPost ? initialPost.isSaved : false,
-      tags: postTags,
-      taggedUsers: cleanTaggedUsers.length > 0 ? cleanTaggedUsers : undefined,
-    };
-
-    if (initialPost && onPostUpdated) {
-      onPostUpdated(newPost);
+    if (postMode === 'regular') {
+      const newPost: Post = {
+        id: `post_${Date.now()}`,
+        authorId: currentUser.id,
+        author: currentUser,
+        createdAt: 'Just now',
+        type: regularType,
+        country: currentUser.country,
+        countryCode: currentUser.countryCode,
+        language: currentUser.languages[0] || 'English',
+        content: {
+          text: captionText || 'Behind the scenes on our latest cinema project.',
+          mediaUrl: regularType !== 'text' ? mediaUrl : undefined,
+          mediaType: regularType === 'video' ? 'video' : 'image',
+          aspect: aspect,
+          title: `${currentUser.name} — Film Still`,
+          cameraSpec: cameraSpec || 'Cinema 35mm Format',
+        },
+        likes: 1,
+        isLiked: true,
+        commentsCount: 0,
+        comments: [],
+        isSaved: false,
+        isPortfolio: addToPortfolio,
+        portfolioRole: addToPortfolio ? portfolioRole : undefined,
+        tags: ['IndieFilm', 'Cinema', 'BTS', currentUser.roles[0] || 'Filmmaker'],
+      };
+      onPostCreated(newPost);
     } else {
+      const countryObj = COUNTRIES_DATA.find((c) => c.name === castingCountry);
+      const chosenPoster = customPosterInput.trim() || castingPosterUrl.trim();
+      const finalPosterUrl = castingPosterChoice === 'poster' && chosenPoster ? chosenPoster : undefined;
+
+      const newPost: Post = {
+        id: `post_casting_${Date.now()}`,
+        authorId: currentUser.id,
+        author: currentUser,
+        createdAt: 'Just now',
+        type: 'casting',
+        country: castingCountry,
+        countryCode: countryObj ? countryObj.code : 'US',
+        language: castingLanguage,
+        content: {
+          text: castingDescription || `Casting & hiring call for our upcoming project "${projectTitle}".`,
+          mediaUrl: finalPosterUrl,
+          mediaType: 'image',
+          aspect: finalPosterUrl ? castingPosterAspect : '16:9',
+          title: `${projectTitle} — ${finalPosterUrl ? 'Official Poster' : 'Production Call'}`,
+          cameraSpec: finalPosterUrl ? 'Official Movie Poster' : 'Production Notice',
+          isPoster: !!finalPosterUrl,
+        },
+        castingDetails: {
+          projectTitle: projectTitle || 'Untitled Film Project',
+          projectType,
+          rolesNeeded,
+          location: locationStr,
+          country: castingCountry,
+          countryCode: countryObj ? countryObj.code : 'US',
+          languageRequirement: castingLanguage,
+          compensationType: compType,
+          compensationAmount: compAmount,
+          deadline,
+          requirementsNote: auditionRequirements,
+          applicationCount: 0,
+          howToApply: 'in_app',
+        },
+        likes: 0,
+        isLiked: false,
+        commentsCount: 0,
+        comments: [],
+        isSaved: false,
+        tags: ['CastingCall', 'FilmAudition', projectType.replace(/\s+/g, ''), ...rolesNeeded],
+      };
       onPostCreated(newPost);
     }
 
-    setIsSubmitting(false);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-[500px] bg-[#1c1c1e] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col border border-border">
-        {/* Header */}
-        <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-[#1c1c1e] z-10 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground p-1 rounded-full transition-colors active:scale-90"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-1.5">
-            <span className="font-brand font-bold text-sm text-foreground">
-              {isCastingMode ? "Post Casting Call" : "New Cinema Post"}
-            </span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-xl bg-neutral-900 border border-neutral-800 text-neutral-100 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+        {/* Clapperboard Slate Header */}
+        <div className="border-b border-white/10 bg-[#0A0E17]">
+          {/* Film slate zebra stripes */}
+          <div className="h-3 w-full flex overflow-hidden">
+            {[...Array(16)].map((_, i) => (
+              <div
+                key={i}
+                className={`flex-1 transform -skew-x-12 ${
+                  i % 2 === 0 ? 'bg-[#FF6B00]' : 'bg-[#0A0E17]'
+                }`}
+              />
+            ))}
           </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit || isSubmitting}
-            className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-[var(--theme-color)] hover:bg-[var(--theme-hover)] text-foreground disabled:opacity-40 disabled:hover:bg-[var(--theme-color)] transition-all active:scale-95 shadow-sm"
-          >
-            {isSubmitting ? "Sharing..." : "Share"}
-          </button>
+
+          <div className="px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clapperboard className="w-5 h-5 text-[#FF6B00]" />
+              <div>
+                <span className="font-brand font-bold text-sm tracking-wide text-white">
+                  CREATE PRODUCTION CUT
+                </span>
+                <span className="text-[10px] text-[#94A3B8] font-mono block">
+                  SCENE 01 / TAKE 01 · 24FPS
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Scrollable Form Body */}
-        <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
-          {/* Post Mode Selector */}
-          <div className="px-4 pt-3 pb-1 flex items-center gap-2">
+        {/* Post Mode Segmented Controller: Regular ⇄ Casting Call */}
+        <div className="p-3 bg-[#0A0E17] border-b border-white/10">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-[#121826] rounded-xl border border-white/10">
             <button
               type="button"
-              onClick={() => setIsCastingMode(false)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                !isCastingMode
-                  ? "bg-black/15 text-foreground shadow-sm border border-border"
-                  : "bg-muted/50 text-muted-foreground hover:text-foreground border border-white/5"
+              onClick={() => setPostMode('regular')}
+              className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                postMode === 'regular'
+                  ? 'bg-[#FF6B00] text-white font-bold'
+                  : 'text-[#94A3B8] hover:text-white'
               }`}
             >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Discussion Post</span>
+              <Film className="w-3.5 h-3.5" /> Regular Cinema Post
             </button>
             <button
               type="button"
-              onClick={() => setIsCastingMode(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                isCastingMode
-                  ? "bg-[var(--theme-color)] text-foreground shadow-sm shadow-[var(--theme-color)]/30"
-                  : "bg-muted/50 text-muted-foreground hover:text-foreground border border-white/5"
+              onClick={() => setPostMode('casting')}
+              className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                postMode === 'casting'
+                  ? 'bg-[#FF6B00] text-white font-bold'
+                  : 'text-[#94A3B8] hover:text-white'
               }`}
             >
-              <Clapperboard className="w-3.5 h-3.5" />
-              <span>Casting Call</span>
+              <Clapperboard className="w-3.5 h-3.5" /> Casting / Hiring Call
             </button>
           </div>
+        </div>
 
-          {/* User Info Bar */}
-          <div className="px-4 pt-2.5 pb-1 flex items-center gap-2.5">
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10"
-            />
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-foreground block truncate leading-tight">
-                {currentUser.name}
-              </span>
-              <span className="text-[11px] text-muted-foreground block truncate leading-tight">
-                @{currentUser.username} · {currentUser.roles[0] || "Filmmaker"}
-              </span>
-            </div>
-          </div>
-
-          {/* Headline / Topic Input */}
-          <div className="px-4 pt-3 pb-1">
-            <input
-              type="text"
-              value={projectTitle}
-              onChange={(e) => setProjectTitle(e.target.value)}
-              placeholder={
-                isCastingMode
-                  ? "Project Title (e.g. Echoes of Tomorrow)"
-                  : "Headline or Topic (Optional)"
-              }
-              className="w-full bg-transparent border-b border-border pb-2 text-sm font-semibold text-foreground placeholder-neutral-500 focus:outline-none focus:border-[var(--theme-color)]"
-            />
-          </div>
-
-          {/* Caption / Discussion Text Area */}
-          <div className="px-4 pt-2 pb-2">
-            <textarea
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder={
-                isCastingMode
-                  ? "Describe the production, story logline, or character overview..."
-                  : "Write your cinema note, filmmaking discussion, or update..."
-              }
-              rows={4}
-              className="w-full bg-transparent border-0 resize-none text-sm text-foreground placeholder-neutral-500 focus:outline-none focus:ring-0 leading-relaxed"
-            />
-          </div>
-
-          {/* Photo Preview (1080x1440 or 1920x1080 with Adjust & Crop action) */}
-          {mediaUrl && (
-            <div
-              className={`mx-4 mb-3 relative rounded-xl overflow-hidden border border-border bg-background flex items-center justify-center group ${
-                aspectMode === "16:9" ? "aspect-video" : "aspect-[3/4] max-h-[420px]"
-              }`}
-            >
-              <img
-                src={mediaUrl}
-                alt="Post attachment"
-                className="w-full h-full object-cover block mx-auto rounded-lg"
-              />
-
-              {/* Action buttons (Top Right) */}
-              <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCropSourceImage(cropSourceImage || mediaUrl);
-                    setIsCropModalOpen(true);
-                  }}
-                  className="px-2.5 py-1 rounded-full bg-background/75 hover:bg-background text-foreground text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-90 shadow-lg border border-white/15 backdrop-blur-md"
-                  title="Adjust framing & aspect ratio"
-                >
-                  <Crop className="w-3.5 h-3.5 text-[var(--theme-color)]" />
-                  <span>Adjust & Crop</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMediaUrl(null);
-                    setCropSourceImage(null);
-                    setImageAspect(null);
-                  }}
-                  className="p-1.5 rounded-full bg-background/75 hover:bg-background text-foreground/90 hover:text-foreground transition-all active:scale-90 shadow-lg border border-border"
-                  title="Remove photo"
-                >
-                  <Trash2 className="w-4 h-4 text-red-400" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Uploading Spinner */}
-          {isUploadingImage && (
-            <div className="mx-4 mb-3 h-32 rounded-xl border border-dashed border-[var(--theme-color)]/40 bg-[var(--theme-color)]/5 flex flex-col items-center justify-center gap-2 text-neutral-300">
-              <Loader2 className="w-6 h-6 animate-spin text-[var(--theme-color)]" />
-              <span className="text-xs font-medium">Attaching photo...</span>
-            </div>
-          )}
-
-          {/* Upload Error Alert */}
-          {uploadError && (
-            <div className="mx-4 mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center justify-between">
-              <span>{uploadError}</span>
-              <button
-                type="button"
-                onClick={() => setUploadError(null)}
-                className="text-red-400 hover:text-red-300"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-
-          {/* Casting Call Fields (when in casting mode) */}
-          {isCastingMode && (
-            <div className="mx-4 mb-3 space-y-3.5 p-3.5 bg-muted/50 rounded-xl border border-border text-xs text-foreground">
-              <div className="flex items-center gap-2 text-[var(--theme-color)] font-semibold text-[11px] uppercase tracking-wider pb-1 border-b border-border">
-                <Clapperboard className="w-3.5 h-3.5" />
-                <span>Production & Audition Details</span>
+        {/* Scrollable Form */}
+        <form onSubmit={handleCreate} className="p-6 overflow-y-auto space-y-4">
+          {postMode === 'regular' ? (
+            /* REGULAR POST FIELDS */
+            <>
+              {/* Type selector */}
+              <div className="flex gap-2">
+                {(['photo', 'video', 'text'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setRegularType(t)}
+                    className={`flex-1 py-2 text-xs font-medium rounded-xl border capitalize transition-colors ${
+                      regularType === t
+                        ? 'bg-[#FF6B00]/20 border-[#FF6B00] text-white font-bold'
+                        : 'bg-black/50 border-white/10 text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    {t === 'photo' && '📸 Film Still / Photo'}
+                    {t === 'video' && '🎥 Reel / Showreel'}
+                    {t === 'text' && '📜 Script / Excerpt'}
+                  </button>
+                ))}
               </div>
 
+              {regularType !== 'text' && (
+                <>
+                  {/* Preset Quick Select or Custom URL */}
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                      Select Cinema Media Preset or Enter URL
+                    </label>
+                    <div className="grid grid-cols-4 gap-2 mb-2">
+                      {PRESET_CINEMA_IMAGES.map((img) => (
+                        <button
+                          key={img.title}
+                          type="button"
+                          onClick={() => {
+                            setMediaUrl(img.url);
+                            setCameraSpec(img.spec);
+                          }}
+                          className={`relative rounded-lg overflow-hidden border aspect-video group ${
+                            mediaUrl === img.url
+                              ? 'border-[#FF6B00] ring-2 ring-[#FF6B00]/30'
+                              : 'border-white/10 opacity-60 hover:opacity-100'
+                          }`}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="url"
+                      value={mediaUrl}
+                      onChange={(e) => setMediaUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00]"
+                    />
+                  </div>
+
+                  {/* Camera specs & Aspect Ratio */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-300 mb-1">
+                        Camera / Lens Spec
+                      </label>
+                      <input
+                        type="text"
+                        value={cameraSpec}
+                        onChange={(e) => setCameraSpec(e.target.value)}
+                        placeholder="e.g. Arri Alexa Mini · 35mm Anamorphic"
+                        className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-300 mb-1">
+                        Aspect Ratio
+                      </label>
+                      <select
+                        value={aspect}
+                        onChange={(e) => setAspect(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-200 focus:outline-none focus:border-[#FF6B00]"
+                      >
+                        <option value="16:9">16:9 Widescreen</option>
+                        <option value="2.39:1">2.39:1 Anamorphic Cinemascope</option>
+                        <option value="4:5">4:5 Instagram Portrait</option>
+                        <option value="1:1">1:1 Square Format</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Caption */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  {regularType === 'text' ? 'Screenplay Excerpt / Dialogue' : 'Caption & Context'}
+                </label>
+                <textarea
+                  rows={regularType === 'text' ? 6 : 3}
+                  value={captionText}
+                  onChange={(e) => setCaptionText(e.target.value)}
+                  placeholder={
+                    regularType === 'text'
+                      ? 'INT. SOUNDSTAGE - NIGHT\n\nFade in on 35mm camera dolly...'
+                      : 'Share production insights, lighting notes, or scene backstory...'
+                  }
+                  className={`w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00] ${
+                    regularType === 'text' ? 'font-mono text-[11px]' : ''
+                  }`}
+                />
+              </div>
+
+              {/* Option to Add to Portfolio (Pro Showcase) */}
+              <div className="p-3.5 bg-black/60 rounded-2xl border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-[#FFB800]/10 border border-[#FFB800]/30 flex items-center justify-center text-[#FFB800] shrink-0">
+                      <Briefcase className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>Add to Portfolio</span>
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-[#FFB800]/10 text-[#FFB800] font-semibold">
+                          SHOWCASE
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#94A3B8]">
+                        Feature this work in your curated film portfolio to share with producers.
+                      </p>
+                    </div>
+                  </div>
+
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={addToPortfolio}
+                      onChange={(e) => setAddToPortfolio(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FF6B00]"></div>
+                  </label>
+                </div>
+
+                {addToPortfolio && (
+                  <div className="pt-2 border-t border-white/5 flex items-center gap-2">
+                    <label className="text-[11px] text-neutral-400 whitespace-nowrap">
+                      Credited Role:
+                    </label>
+                    <select
+                      value={portfolioRole}
+                      onChange={(e) => setPortfolioRole(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-[#FFB800]"
+                    >
+                      {ALL_ROLES.map((r) => (
+                        <option key={r} value={r} className="bg-neutral-900 text-white">
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            /* CASTING / HIRING CALL FIELDS */
+            <>
+              {/* Project Title & Type */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] text-muted-foreground mb-1">
-                    Production Format
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Project Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={projectTitle}
+                    onChange={(e) => setProjectTitle(e.target.value)}
+                    placeholder="e.g. The Blue Hour"
+                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Project Type
                   </label>
                   <select
                     value={projectType}
                     onChange={(e) => setProjectType(e.target.value as ProjectType)}
-                    className="w-full bg-[#262626] border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-[var(--theme-color)]"
+                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-200 focus:outline-none focus:border-[#FF6B00]"
                   >
-                    <option value="Short Film">Short Film</option>
                     <option value="Feature Film">Feature Film</option>
+                    <option value="Short Film">Short Film</option>
                     <option value="Web Series">Web Series</option>
                     <option value="Commercial / Ad">Commercial / Ad</option>
                     <option value="Theatre / Stage">Theatre / Stage</option>
                     <option value="Documentary">Documentary</option>
                   </select>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-[11px] text-muted-foreground mb-1">Role Needed</label>
-                  <select
-                    value={rolesNeeded[0] || "Acting"}
-                    onChange={(e) => setRolesNeeded([e.target.value as CinemaRole])}
-                    className="w-full bg-[#262626] border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-[var(--theme-color)]"
+              {/* POSTER OR NO-POSTER SELECTION (Key Feature) */}
+              <div className="p-3.5 bg-black/60 rounded-2xl border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
+                    Production Artwork & Visuals
+                  </label>
+                  <span className="text-[11px] font-mono text-[#FFB800]">
+                    {castingPosterChoice === 'poster' ? '🎬 Movie Poster' : '📝 Text-Only Notice'}
+                  </span>
+                </div>
+
+                {/* Switcher Pills */}
+                <div className="grid grid-cols-2 gap-2 p-1 bg-black/80 rounded-xl border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setCastingPosterChoice('poster')}
+                    className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                      castingPosterChoice === 'poster'
+                        ? 'bg-[#FF6B00] text-white font-bold shadow-sm shadow-[#FF6B00]/30'
+                        : 'text-[#94A3B8] hover:text-white'
+                    }`}
                   >
-                    {ALL_ROLES.map((r) => (
-                      <option key={r} value={r}>
+                    <Film className="w-3.5 h-3.5" />
+                    <span>Add Movie Poster</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCastingPosterChoice('none')}
+                    className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                      castingPosterChoice === 'none'
+                        ? 'bg-[#FFB800] text-black font-bold shadow-sm shadow-[#FFB800]/30'
+                        : 'text-[#94A3B8] hover:text-white'
+                    }`}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>No Poster (Text Only)</span>
+                  </button>
+                </div>
+
+                {castingPosterChoice === 'poster' ? (
+                  <div className="space-y-3 pt-1">
+                    {/* Cinema Movie Poster Presets */}
+                    <div>
+                      <div className="text-[11px] text-neutral-300 font-medium mb-1.5 flex items-center justify-between">
+                        <span>Select a Cinematic Film Poster Preset:</span>
+                        <span className="text-[10px] text-[#94A3B8]">2:3 / 3:4 Formats</span>
+                      </div>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {PRESET_CASTING_POSTERS.map((poster) => {
+                          const isSelected =
+                            !customPosterInput && castingPosterUrl === poster.url;
+                          return (
+                            <button
+                              key={poster.title}
+                              type="button"
+                              onClick={() => {
+                                setCustomPosterInput('');
+                                setCastingPosterUrl(poster.url);
+                                setCastingPosterAspect(poster.aspect);
+                              }}
+                              className={`relative rounded-xl overflow-hidden border aspect-[2/3] group transition-all text-left ${
+                                isSelected
+                                  ? 'border-[#FF6B00] ring-2 ring-[#FF6B00]/40 scale-[1.03] z-10 shadow-lg'
+                                  : 'border-white/10 opacity-70 hover:opacity-100 hover:scale-[1.01]'
+                              }`}
+                            >
+                              <img
+                                src={poster.url}
+                                alt={poster.title}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-1.5">
+                                <span className="text-[9px] text-white font-bold leading-tight line-clamp-2">
+                                  {poster.label}
+                                </span>
+                                <span className="text-[7px] text-[#FFB800] font-mono mt-0.5">
+                                  {poster.aspect}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Custom Poster URL or Upload Local Image */}
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={customPosterInput}
+                          onChange={(e) => {
+                            setCustomPosterInput(e.target.value);
+                            if (e.target.value) {
+                              setCastingPosterUrl(e.target.value);
+                            }
+                          }}
+                          placeholder="Or paste custom movie poster URL (https://...)"
+                          className="flex-1 px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00]"
+                        />
+                        <label className="shrink-0 px-3 py-2 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-xs text-neutral-200 cursor-pointer flex items-center gap-1.5 transition-colors">
+                          <Plus className="w-3.5 h-3.5 text-[#FFB800]" />
+                          <span>Upload File</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePosterFileUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+
+                      {/* Poster Aspect Ratio Selector */}
+                      <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+                        <span className="text-[11px] text-[#94A3B8] font-medium">
+                          Poster Frame Ratio:
+                        </span>
+                        <div className="flex gap-1.5">
+                          {[
+                            { val: '2:3', label: '2:3 Standard Poster' },
+                            { val: '3:4', label: '3:4 Festival Lookbook' },
+                            { val: '16:9', label: '16:9 Key Art Banner' },
+                          ].map((fmt) => (
+                            <button
+                              key={fmt.val}
+                              type="button"
+                              onClick={() => setCastingPosterAspect(fmt.val as any)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors ${
+                                castingPosterAspect === fmt.val
+                                  ? 'bg-[#FF6B00]/20 border-[#FF6B00] text-white font-bold'
+                                  : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white'
+                              }`}
+                            >
+                              {fmt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-white/5 rounded-xl border border-dashed border-[#FFB800]/30 text-center space-y-1">
+                    <div className="text-xs font-semibold text-[#FFB800] flex items-center justify-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-[#FFB800]" />
+                      <span>Text-Only Production Notice Active</span>
+                    </div>
+                    <p className="text-[11px] text-[#94A3B8] max-w-sm mx-auto leading-relaxed">
+                      No poster image will be shown. Your casting call will be formatted cleanly as an official cinema production bulletin with roles, audition details, and compensation.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Roles Needed */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
+                  Role(s) Needed (Multi-select)
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-black/50 rounded-xl border border-white/10">
+                  {ALL_ROLES.map((r) => {
+                    const active = rolesNeeded.includes(r);
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => handleRoleToggle(r)}
+                        className={`p-1.5 rounded-lg text-[11px] font-medium text-left truncate transition-colors ${
+                          active
+                            ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/50 font-bold'
+                            : 'bg-white/5 text-[#94A3B8] hover:text-white'
+                        }`}
+                      >
                         {r}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Location, Country, Language */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    City / Location
+                  </label>
+                  <input
+                    type="text"
+                    value={locationStr}
+                    onChange={(e) => setLocationStr(e.target.value)}
+                    placeholder="Paris, France"
+                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">Country</label>
+                  <select
+                    value={castingCountry}
+                    onChange={(e) => setCastingCountry(e.target.value)}
+                    className="w-full px-2 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-200 focus:outline-none focus:border-[#FF6B00]"
+                  >
+                    {COUNTRIES_DATA.map((c) => (
+                      <option key={c.code} value={c.name}>
+                        {c.flag} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">Language</label>
+                  <select
+                    value={castingLanguage}
+                    onChange={(e) => setCastingLanguage(e.target.value)}
+                    className="w-full px-2 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-200 focus:outline-none focus:border-[#FF6B00]"
+                  >
+                    {LANGUAGES_LIST.map((l) => (
+                      <option key={l} value={l}>
+                        {l}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Compensation & Deadline */}
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-[11px] text-muted-foreground mb-1">Compensation</label>
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Compensation Type
+                  </label>
                   <select
                     value={compType}
-                    onChange={(e) =>
-                      setCompType(e.target.value as "Paid" | "Unpaid" | "Negotiable")
-                    }
-                    className="w-full bg-[#262626] border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-[var(--theme-color)]"
+                    onChange={(e) => setCompType(e.target.value as any)}
+                    className="w-full px-2 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-200 focus:outline-none focus:border-[#FF6B00]"
                   >
                     <option value="Paid">Paid</option>
-                    <option value="Unpaid">Unpaid / Collaboration</option>
                     <option value="Negotiable">Negotiable</option>
+                    <option value="Unpaid">Unpaid / Indie</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-[11px] text-muted-foreground mb-1">
-                    Pay Rate / Notes
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Rate / Pay Details
                   </label>
                   <input
                     type="text"
                     value={compAmount}
                     onChange={(e) => setCompAmount(e.target.value)}
-                    placeholder="e.g. $500 / day"
-                    className="w-full bg-[#262626] border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-[var(--theme-color)]"
+                    placeholder="$500 / day"
+                    className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00]"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] text-muted-foreground mb-1">
-                    Submission Deadline
+                  <label className="block text-xs font-medium text-neutral-300 mb-1">
+                    Deadline Date
                   </label>
                   <input
                     type="date"
                     value={deadline}
                     onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full bg-[#262626] border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-[var(--theme-color)]"
+                    className="w-full px-2 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-200 focus:outline-none focus:border-[#FF6B00]"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-[11px] text-muted-foreground mb-1">
-                    Audition Requirements
-                  </label>
-                  <input
-                    type="text"
-                    value={auditionNote}
-                    onChange={(e) => setAuditionNote(e.target.value)}
-                    placeholder="e.g. 1-min self-tape reel"
-                    className="w-full bg-[#262626] border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-[var(--theme-color)]"
-                  />
-                </div>
+              {/* Description & Audition notes */}
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Project Description & Synopsis
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  value={castingDescription}
+                  onChange={(e) => setCastingDescription(e.target.value)}
+                  placeholder="Outline the story logline, tone references, and characters..."
+                  className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00]"
+                />
               </div>
 
               <div>
-                <label className="block text-[11px] text-muted-foreground mb-1">
-                  Language Requirement (Optional)
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Audition / Self-tape Requirements
                 </label>
                 <input
                   type="text"
-                  value={languageReq}
-                  onChange={(e) => setLanguageReq(e.target.value)}
-                  placeholder="e.g. English, Hindi, Tamil..."
-                  className="w-full bg-[#262626] border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-[var(--theme-color)]"
+                  value={auditionRequirements}
+                  onChange={(e) => setAuditionRequirements(e.target.value)}
+                  placeholder="e.g. 2-minute monologue in character or showreel"
+                  className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
-            </div>
+            </>
           )}
 
-          {/* Additional Options List */}
-          <div className="border-t border-border divide-y divide-white/5">
-            {/* Photo Attachment (Strictly Image Only) */}
-            <div className="px-4 py-3 text-xs text-foreground">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingImage}
-                className="w-full flex items-center justify-between text-neutral-300 hover:text-foreground transition-colors"
-              >
-                <span className="flex items-center gap-2">
-                  <ImageIcon className="w-3.5 h-3.5 text-[var(--theme-color)]" />
-                  <span>{mediaUrl ? "Photo Attached" : "Add Photo"}</span>
-                </span>
-                <span className="text-[11px] text-[var(--theme-color)] font-medium">
-                  {mediaUrl ? "Change" : "+ Add Photo"}
-                </span>
-              </button>
-            </div>
-
-            {/* Tag People (with ID / Username) */}
-            <div className="px-4 py-3 text-xs text-foreground">
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowUserInput(!showUserInput)}
-                  className="w-full flex items-center justify-between text-neutral-300 hover:text-foreground transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <UserPlus className="w-3.5 h-3.5 text-[var(--theme-color)]" />
-                    <span>Tag People (with ID / @username)</span>
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {taggedUsers.length > 0 && (
-                      <span className="text-[11px] text-[var(--theme-color)] font-medium">
-                        {taggedUsers.length} tagged
-                      </span>
-                    )}
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${showUserInput ? "rotate-180" : ""}`}
-                    />
-                  </div>
-                </button>
-
-                {showUserInput && (
-                  <div className="pt-1 space-y-2">
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-[var(--theme-color)] font-bold text-xs">
-                        @
-                      </div>
-                      <input
-                        type="text"
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        onKeyDown={handleUserKeyDown}
-                        placeholder="Type @username, user ID, or name and press Enter..."
-                        className="w-full bg-[#262626] border border-border rounded-lg pl-7 pr-16 py-2 focus:outline-none focus:border-[var(--theme-color)] text-foreground text-xs placeholder-neutral-500"
-                        autoFocus
-                      />
-                      {userInput.trim() && (
-                        <button
-                          type="button"
-                          onClick={() => handleAddTaggedUser(userInput.trim())}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded bg-[var(--theme-color)] hover:bg-[var(--theme-hover)] text-foreground text-[11px] font-semibold transition-colors"
-                        >
-                          Tag
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Suggestions list */}
-                    {filteredSuggestions.length > 0 && (
-                      <div className="rounded-xl bg-[#262626] border border-border overflow-hidden divide-y divide-white/5 shadow-xl max-h-48 overflow-y-auto no-scrollbar">
-                        {filteredSuggestions.map((u) => (
-                          <button
-                            key={u.id}
-                            type="button"
-                            onClick={() => handleAddTaggedUser(u.username)}
-                            className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-muted/50 transition-colors group"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <img
-                                src={u.avatar}
-                                alt={u.name}
-                                className="w-6 h-6 rounded-full object-cover ring-1 ring-white/10 shrink-0"
-                              />
-                              <div className="min-w-0">
-                                <span className="font-semibold text-xs text-foreground block truncate leading-tight group-hover:text-[var(--theme-color)]">
-                                  {u.name}
-                                </span>
-                                <span className="text-[11px] text-muted-foreground block truncate leading-tight">
-                                  @{u.username} · ID: {u.id}
-                                </span>
-                              </div>
-                            </div>
-                            <span className="text-[11px] text-[var(--theme-color)] font-medium shrink-0 ml-2">
-                              + Tag
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Tagged pills */}
-                    {taggedUsers.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        {taggedUsers.map((tag) => {
-                          const matched = userPool.find(
-                            (u) =>
-                              u.username.toLowerCase() === tag.toLowerCase() ||
-                              u.id.toLowerCase() === tag.toLowerCase(),
-                          );
-                          return (
-                            <span
-                              key={tag}
-                              className="px-2.5 py-1 rounded-full bg-muted border border-white/15 text-foreground text-xs font-medium flex items-center gap-1.5 shadow-sm"
-                            >
-                              {matched?.avatar && (
-                                <img
-                                  src={matched.avatar}
-                                  alt=""
-                                  className="w-4 h-4 rounded-full object-cover shrink-0"
-                                />
-                              )}
-                              <span className="text-[var(--theme-color)]">@</span>
-                              <span>{matched ? matched.username : tag}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveTaggedUser(tag)}
-                                className="text-muted-foreground hover:text-foreground p-0.5 transition-colors"
-                                title="Remove tag"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Location (Optional) */}
-            <div className="px-4 py-3 text-xs text-foreground">
-              {showLocationInput ? (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Add location (e.g. London, Los Angeles)..."
-                    className="flex-1 bg-transparent focus:outline-none text-foreground text-xs"
-                    autoFocus
-                  />
-                  <button type="button" onClick={() => setShowLocationInput(false)}>
-                    <X className="w-3.5 h-3.5 text-neutral-500" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowLocationInput(true)}
-                  className="w-full flex items-center justify-between text-neutral-300 hover:text-foreground transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>{location || "Add Location (Optional)"}</span>
-                  </span>
-                  <span className="text-[11px] text-neutral-500">
-                    {location ? "Change" : "+ Add"}
-                  </span>
-                </button>
-              )}
-            </div>
-
-            {/* Tags (Optional) */}
-            <div className="px-4 py-3 text-xs text-foreground">
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowTagInput(!showTagInput)}
-                  className="w-full flex items-center justify-between text-neutral-300 hover:text-foreground transition-colors"
-                >
-                  <span className="flex items-center gap-2">
-                    <Tag className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>Tag Topics (Optional)</span>
-                  </span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform ${showTagInput ? "rotate-180" : ""}`}
-                  />
-                </button>
-
-                {showTagInput && (
-                  <div className="pt-1">
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={handleAddTag}
-                      placeholder="Type a tag and press Enter"
-                      className="w-full bg-[#262626] border border-border rounded-lg px-2.5 py-1.5 focus:outline-none text-foreground text-xs"
-                    />
-                  </div>
-                )}
-
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {tags.map((t) => (
-                      <span
-                        key={t}
-                        className="px-2 py-0.5 rounded-full bg-[var(--theme-color)]/15 border border-[var(--theme-color)]/30 text-[var(--theme-color)] text-[11px] font-medium flex items-center gap-1"
-                      >
-                        #{t}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(t)}
-                          className="hover:text-foreground"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+          {/* Submit button */}
+          <div className="pt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-full bg-white/10 text-neutral-300 hover:bg-white/15 text-xs font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 py-2.5 rounded-full bg-[#FF6B00] hover:bg-[#E05300] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-[0.98] shadow-md shadow-[#FF6B00]/20"
+            >
+              <Clapperboard className="w-4 h-4" />
+              {postMode === 'regular' ? 'Publish to Kinotribe Feed' : 'Broadcast Casting Call'}
+            </button>
           </div>
-        </div>
-
-        {/* Hidden File Picker: Strictly accept="image/*", no videos allowed on posts */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageSelect}
-          className="hidden"
-        />
+        </form>
       </div>
-
-      {/* Interactive Crop & Adjust Modal */}
-      {isCropModalOpen && cropSourceImage && (
-        <ImageCropModal
-          imageFile={cropSourceImage}
-          isOpen={isCropModalOpen}
-          initialAspect={aspectMode}
-          onClose={() => setIsCropModalOpen(false)}
-          onCropComplete={handleCropComplete}
-        />
-      )}
     </div>
   );
 };

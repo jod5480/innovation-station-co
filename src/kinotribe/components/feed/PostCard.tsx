@@ -1,48 +1,28 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState } from 'react';
 import {
   Heart,
   MessageCircle,
+  Share2,
   Bookmark,
   Clapperboard,
   MapPin,
+  DollarSign,
   Calendar,
   Globe,
   CheckCircle2,
   Send,
+  Sparkles,
   Banknote,
+  FileText,
   ChevronDown,
   ChevronUp,
-  Trash2,
-  MoreHorizontal,
-  Edit3,
-  UserPlus,
-  Users,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../../../components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../../../components/ui/alert-dialog";
-import { Post, User } from "../../types";
-import { CinemaMediaFrame } from "../../utils/cinemaMedia";
-import { hapticMedium, hapticHeavy, hapticLight, hapticSuccess } from "../../utils/haptics";
-import { MOCK_USERS } from "../../data/mockCinemaData";
+} from 'lucide-react';
+import { Post, User, Application } from '../../types';
+import { CinemaMediaFrame } from '../../utils/cinemaMedia';
 
 interface PostCardProps {
   post: Post;
   currentUser: User;
-  allUsers?: User[];
   onLikeToggle: (postId: string) => void;
   onSaveToggle: (postId: string) => void;
   onFollowToggle: (userId: string) => void;
@@ -52,37 +32,11 @@ interface PostCardProps {
   onOpenApply: (post: Post) => void;
   onUserClick: (user: User) => void;
   onAddComment: (postId: string, text: string) => void;
-  onDelete?: (postId: string) => void;
-  onEdit?: (post: Post) => void;
-  /** Staggered entrance delay in ms */
-  entranceDelay?: number;
 }
-
-const formatPostTime = (dateStr?: string): string => {
-  if (!dateStr || dateStr === "Just now") return "Just now";
-  try {
-    const time = new Date(dateStr).getTime();
-    if (isNaN(time)) return dateStr;
-    const diffSec = Math.floor((Date.now() - time) / 1000);
-    if (diffSec < 60) return "Just now";
-    const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin}m`;
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h`;
-    const diffDays = Math.floor(diffHr / 24);
-    if (diffDays < 7) return `${diffDays}d`;
-    const diffWeeks = Math.floor(diffDays / 7);
-    if (diffWeeks < 5) return `${diffWeeks}w`;
-    return new Date(dateStr).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  } catch {
-    return dateStr;
-  }
-};
 
 export const PostCard: React.FC<PostCardProps> = ({
   post,
   currentUser,
-  allUsers,
   onLikeToggle,
   onSaveToggle,
   onFollowToggle,
@@ -92,142 +46,48 @@ export const PostCard: React.FC<PostCardProps> = ({
   onOpenApply,
   onUserClick,
   onAddComment,
-  onDelete,
-  onEdit,
-  entranceDelay = 0,
 }) => {
   const [showHeartPop, setShowHeartPop] = useState(false);
-  const [likeScale, setLikeScale] = useState(false);
-  const [saveScale, setSaveScale] = useState(false);
-  const [commentInput, setCommentInput] = useState("");
+  const [commentInput, setCommentInput] = useState('');
   const [showInlineCastingDetails, setShowInlineCastingDetails] = useState(false);
   const [showInlineComments, setShowInlineComments] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isOwnPost = currentUser.id === post.author.id;
 
-  const resolveUser = (identifier: string): User | undefined => {
-    const cleanId = identifier.trim().toLowerCase().replace(/^@/, "");
-    const pool = allUsers && allUsers.length > 0 ? allUsers : MOCK_USERS;
-    return pool.find(
-      (u) =>
-        u.username.toLowerCase().replace(/^@/, "") === cleanId ||
-        u.id.toLowerCase() === cleanId ||
-        u.name.toLowerCase() === cleanId,
-    );
-  };
-
-  const handleTaggedUserClick = (identifier: string) => {
-    hapticLight();
-    const resolved = resolveUser(identifier);
-    const cleanHandle = identifier.trim().replace(/^@/, "");
-    const userToPass: User = resolved || {
-      id: identifier,
-      name: `@${cleanHandle}`,
-      username: `@${cleanHandle}`,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanHandle}`,
-      roles: ["Directing"],
-      bio: "",
-      country: "Global",
-      countryCode: "US",
-      languages: ["English"],
-      experienceLevel: "Experienced",
-      isVerified: false,
-      followersCount: 0,
-      followingCount: 0,
-      joinedDate: "Joined Cinetribe",
-    };
-    onUserClick(userToPass);
-  };
-
-  // Double-tap detection
-  const lastTapRef = useRef<number>(0);
-
-  const handleDoubleTap = useCallback(() => {
-    const now = Date.now();
-    const delta = now - lastTapRef.current;
-    lastTapRef.current = now;
-
-    if (delta < 300) {
-      setShowHeartPop(true);
-      hapticHeavy();
-      if (!post.isLiked) {
-        onLikeToggle(post.id);
-        setLikeScale(true);
-        setTimeout(() => setLikeScale(false), 400);
-      }
-      setTimeout(() => setShowHeartPop(false), 950);
+  const handleDoubleTap = () => {
+    setShowHeartPop(true);
+    if (!post.isLiked) {
+      onLikeToggle(post.id);
     }
-  }, [post.id, post.isLiked, onLikeToggle]);
-
-  const handleLike = useCallback(() => {
-    hapticMedium();
-    setLikeScale(true);
-    setTimeout(() => setLikeScale(false), 400);
-    onLikeToggle(post.id);
-  }, [post.id, onLikeToggle]);
-
-  const handleSave = useCallback(() => {
-    hapticLight();
-    setSaveScale(true);
-    setTimeout(() => setSaveScale(false), 350);
-    onSaveToggle(post.id);
-  }, [post.id, onSaveToggle]);
-
-  const handleShare = useCallback(() => {
-    hapticLight();
-    onOpenShare(post);
-  }, [post, onOpenShare]);
+    setTimeout(() => setShowHeartPop(false), 900);
+  };
 
   const handleQuickCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentInput.trim()) return;
-    hapticSuccess();
     onAddComment(post.id, commentInput.trim());
-    setCommentInput("");
+    setCommentInput('');
   };
 
   const casting = post.castingDetails;
 
-  // Only show tags that the user explicitly added (filter out auto-injected casting tags & tags in text)
-  const displayTags = (post.tags || []).filter((tag) => {
-    const clean = tag.trim().replace(/^#/, "");
-    if (!clean) return false;
-    // Filter out auto-injected casting tags if they match rolesNeeded or 'castingcall'
-    if (post.type === "casting") {
-      if (clean.toLowerCase() === "castingcall" || clean.toLowerCase() === "casting") return false;
-      if (post.castingDetails?.rolesNeeded.some((r) => r.toLowerCase() === clean.toLowerCase()))
-        return false;
-    }
-    // Filter out if already written in post text
-    if (post.content.text && post.content.text.toLowerCase().includes(`#${clean.toLowerCase()}`))
-      return false;
-    return true;
-  });
-
   return (
-    <article
-      className="w-full bg-background border-b border-neutral-800/80 pb-3 mb-2 sm:mb-4 select-none text-left relative post-card-enter"
-      style={{ animationDelay: `${entranceDelay}ms` }}
-    >
-      {/* 1. Creator Header (Instagram Native Style) */}
-      <div className="px-3.5 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
+    <article className="w-full bg-[#121826] border border-white/10 rounded-[24px] overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-all mb-4">
+      {/* Post Top Bar: Creator Info */}
+      <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
           <button
-            onClick={() => {
-              hapticLight();
-              onUserClick(post.author);
-            }}
+            onClick={() => onUserClick(post.author)}
             className="relative shrink-0 group focus:outline-none active:scale-95 transition-transform"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full p-[1.5px] bg-gradient-to-tr from-neutral-800 to-neutral-700 group-hover:from-[var(--theme-color)] group-hover:to-[#000000] transition-all overflow-hidden">
+            <div className="w-11 h-11 rounded-[16px] p-[2px] bg-black/60 border border-white/10 group-hover:border-[#FF6B00] transition-colors overflow-hidden shadow-sm">
               <img
                 src={post.author.avatar}
                 alt={post.author.name}
-                className="w-full h-full rounded-full object-cover"
+                className="w-full h-full rounded-[14px] object-cover group-hover:scale-105 transition-transform"
               />
             </div>
-            {post.type === "casting" && (
-              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[var(--theme-color)] text-foreground flex items-center justify-center text-[8px] font-bold ring-2 ring-black">
+            {post.type === 'casting' && (
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-md bg-[#FF6B00] text-white flex items-center justify-center text-[9px] font-bold shadow">
                 🎬
               </span>
             )}
@@ -236,575 +96,381 @@ export const PostCard: React.FC<PostCardProps> = ({
           <div className="min-w-0 text-left">
             <div className="flex items-center gap-1.5 flex-wrap">
               <button
-                onClick={() => {
-                  hapticLight();
-                  onUserClick(post.author);
-                }}
-                className="font-semibold text-sm text-foreground hover:text-neutral-300 transition-colors truncate"
+                onClick={() => onUserClick(post.author)}
+                className="font-brand font-bold text-sm text-white hover:text-[#FF6B00] transition-colors truncate"
               >
                 {post.author.username}
               </button>
               {post.author.isVerified && (
-                <CheckCircle2 className="w-3.5 h-3.5 text-[var(--theme-color)] shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
               )}
-              {post.taggedUsers && post.taggedUsers.length > 0 && (
-                <span className="text-xs text-muted-foreground font-normal inline-flex items-center gap-1 flex-wrap">
-                  <span className="text-neutral-500">with</span>
-                  {post.taggedUsers.slice(0, 2).map((identifier, idx) => {
-                    const u = resolveUser(identifier);
-                    const label = u
-                      ? `@${u.username.replace(/^@/, "")}`
-                      : `@${identifier.replace(/^@/, "")}`;
-                    return (
-                      <React.Fragment key={identifier}>
-                        {idx > 0 && <span className="text-neutral-500">,</span>}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTaggedUserClick(identifier);
-                          }}
-                          className="text-foreground hover:text-[var(--theme-color)] font-medium hover:underline transition-colors"
-                        >
-                          {label}
-                        </button>
-                      </React.Fragment>
-                    );
-                  })}
-                  {post.taggedUsers.length > 2 && (
-                    <span className="text-muted-foreground">+{post.taggedUsers.length - 2} more</span>
-                  )}
-                </span>
-              )}
-              <span className="text-neutral-500 text-xs font-normal">·</span>
-              <span className="text-muted-foreground text-xs font-normal">
-                {formatPostTime(post.createdAt)}
-              </span>
             </div>
 
-            {/* Subtitle: Display name · Role · Location */}
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground truncate">
-              <button
-                type="button"
-                onClick={() => {
-                  hapticLight();
-                  onUserClick(post.author);
-                }}
-                className="text-neutral-300 hover:text-foreground font-medium transition-colors focus:outline-none"
-              >
+            {/* Subtitle: Display name · Roles · Country */}
+            <div className="flex items-center gap-1.5 text-[11px] text-[#94A3B8] truncate">
+              <span className="text-neutral-300 font-medium">
                 {post.author.name}
-              </button>
-              <span>·</span>
-              <span className="text-[var(--theme-color)] font-medium">
-                {post.author.roles[0] || "Filmmaker"}
               </span>
-              {post.content.location && (
-                <>
-                  <span>·</span>
-                  <span className="truncate">{post.content.location}</span>
-                </>
-              )}
+              <span>·</span>
+              <span className="text-[#FFB800] font-medium">
+                {post.author.roles[0] || 'Filmmaker'}
+              </span>
+              <span>·</span>
+              <span>{post.country}</span>
             </div>
           </div>
         </div>
 
-        {/* Right side: Follow Button or Post Options */}
-        <div className="flex items-center gap-2">
-          {!isOwnPost ? (
-            <button
-              onClick={() => {
-                hapticMedium();
-                onFollowToggle(post.author.id);
-              }}
-              className={`px-3.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all active:scale-95 ${
-                isFollowing
-                  ? "bg-secondary text-neutral-300 hover:bg-neutral-700"
-                  : "bg-[var(--theme-color)] hover:bg-[var(--theme-hover)] text-foreground"
-              }`}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </button>
-          ) : onDelete || onEdit ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors active:scale-95 outline-none"
-                  title="Post options"
-                >
-                  <MoreHorizontal className="w-5 h-5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-40 bg-card border-border text-foreground rounded-xl shadow-xl"
-              >
-                {onEdit && (
-                  <DropdownMenuItem
-                    onClick={() => onEdit(post)}
-                    className="gap-2 cursor-pointer focus:bg-muted focus:text-foreground"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    <span>Edit Post</span>
-                  </DropdownMenuItem>
-                )}
-                {onDelete && (
-                  <DropdownMenuItem
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="gap-2 cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Delete Post</span>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
-        </div>
+        {/* Follow / Post Options button */}
+        {!isOwnPost && (
+          <button
+            onClick={() => onFollowToggle(post.author.id)}
+            className={`px-3.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all active:scale-95 ${
+              isFollowing
+                ? 'bg-white/10 text-neutral-300 hover:bg-white/15'
+                : 'bg-[#FF6B00] hover:bg-[#E05300] text-white font-bold shadow-sm shadow-[#FF6B00]/20'
+            }`}
+          >
+            {isFollowing ? 'Following' : '+ Follow'}
+          </button>
+        )}
       </div>
 
-      {/* 2. Post Content: Heading, Text & Hashtags (LinkedIn / Facebook style - on top of image) */}
-      {post.type !== "casting" &&
-        (post.content.title ||
-          post.content.text ||
-          displayTags.length > 0 ||
-          (post.taggedUsers && post.taggedUsers.length > 0)) && (
-          <div
-            className="px-3.5 sm:px-4 pt-0.5 pb-2 text-left relative cursor-pointer"
-            onClick={handleDoubleTap}
-          >
-            {post.content.title && (
-              <h3 className="font-bold text-[15px] sm:text-base text-foreground mb-1 leading-snug tracking-tight">
-                {post.content.title}
-              </h3>
-            )}
-            {post.content.text && (
-              <p className="text-[14px] sm:text-[15px] text-neutral-100 font-normal leading-relaxed whitespace-pre-wrap select-text">
-                {post.content.text}
-              </p>
-            )}
-            {displayTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1.5 text-xs sm:text-[13px] text-[var(--theme-color)] font-medium">
-                {displayTags.map((tag) => (
-                  <span key={tag} className="hover:underline cursor-pointer">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
+      {/* Caption & Post Content ON TOP (Facebook Style) */}
+      {post.type !== 'casting' && (post.content.title || post.content.text || post.tags.length > 0) && (
+        <div className="px-4 pb-3 space-y-1.5 text-left">
+          {post.content.title && (
+            <h4 className="font-brand font-bold text-base text-white tracking-tight">
+              {post.content.title}
+            </h4>
+          )}
 
-            {/* Tagged People Badges */}
-            {post.taggedUsers && post.taggedUsers.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5 pt-2">
-                <div className="flex items-center gap-1 text-[11px] text-muted-foreground font-medium mr-0.5">
-                  <Users className="w-3.5 h-3.5 text-[var(--theme-color)]" />
-                  <span>Tagged:</span>
-                </div>
-                {post.taggedUsers.map((identifier) => {
-                  const u = resolveUser(identifier);
-                  const displayLabel = u
-                    ? `@${u.username.replace(/^@/, "")}`
-                    : `@${identifier.replace(/^@/, "")}`;
-                  return (
-                    <button
-                      key={identifier}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTaggedUserClick(identifier);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--theme-color)]/10 border border-[var(--theme-color)]/30 text-[var(--theme-color)] hover:bg-[var(--theme-color)]/20 hover:border-[var(--theme-color)]/50 text-xs font-medium transition-all active:scale-95"
-                    >
-                      {u?.avatar ? (
-                        <img
-                          src={u.avatar}
-                          alt={displayLabel}
-                          className="w-3.5 h-3.5 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="w-3.5 h-3.5 rounded-full bg-[var(--theme-color)]/30 text-[9px] flex items-center justify-center font-bold">
-                          @
-                        </span>
-                      )}
-                      <span>{displayLabel}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+          {post.content.text && (
+            <p
+              className={`text-xs sm:text-sm text-neutral-200 leading-relaxed ${
+                post.type === 'text'
+                  ? 'bg-black/50 p-3.5 rounded-2xl border border-white/5 text-xs whitespace-pre-wrap'
+                  : ''
+              }`}
+            >
+              <span
+                onClick={() => onUserClick(post.author)}
+                className="font-bold text-white mr-1.5 hover:text-[#FF6B00] cursor-pointer"
+              >
+                {post.author.username}
+              </span>
+              {post.content.text}
+            </p>
+          )}
 
-            {/* Heart Pop on Double Tap (when double-tapping pure text posts) */}
-            {!post.content.mediaUrl && showHeartPop && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                <Heart className="w-20 h-20 fill-white text-foreground ig-heart-pop drop-shadow-2xl" />
-              </div>
-            )}
-          </div>
-        )}
-
-      {/* 3. Media / Video Frame (Flush Edge-to-Edge Instagram style) */}
-      {post.content.mediaUrl && post.type !== "casting" && (
-        <div className="relative w-full" onClick={handleDoubleTap}>
-          <CinemaMediaFrame
-            src={post.content.mediaUrl}
-            alt={post.content.title || "Cinema post"}
-            aspect={post.content.aspect || "auto"}
-            aspectRatio={post.content.aspectRatio}
-            title={post.content.title}
-            cameraSpec={post.content.cameraSpec}
-            type={post.content.mediaType}
-            isPoster={post.content.isPoster}
-            onDoubleTap={handleDoubleTap}
-          />
-          {/* Instagram-style Heart Pop on Double Tap */}
-          {showHeartPop && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-              <Heart className="w-24 h-24 fill-white text-foreground ig-heart-pop drop-shadow-2xl" />
+          {/* Hashtags */}
+          {post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-0.5 text-xs text-[#FFB800] font-medium">
+              {post.tags.map((tag) => (
+                <span key={tag} className="hover:underline cursor-pointer">
+                  #{tag}
+                </span>
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* 4. Casting Post — Seamless Professional Layout */}
-      {post.type === "casting" && casting && (
-        <div className="w-full text-left">
-          {/* Poster / Media (full-width, with gradient overlay showing title + caption) */}
-          <div className="relative w-full overflow-hidden" onClick={handleDoubleTap}>
-            {post.content.mediaUrl ? (
-              <>
+      {/* Media / Video Frame / Movie Poster with Double-tap Heart Detection */}
+      {post.content.mediaUrl && (
+        <div className="relative">
+          {post.type === 'casting' && (post.content.aspect === '2:3' || post.content.aspect === '3:4') ? (
+            /* Centered Theatrical Film Poster Container with ambient backlight */
+            <div className="w-full bg-gradient-to-b from-black/90 via-[#0a0a0c] to-black p-3 sm:p-4 flex flex-col items-center justify-center relative overflow-hidden">
+              <div
+                className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 scale-125 pointer-events-none"
+                style={{ backgroundImage: `url(${post.content.mediaUrl})` }}
+              />
+              <div className="relative w-full max-w-[340px] rounded-2xl overflow-hidden shadow-2xl border border-white/15 ring-1 ring-white/10">
                 <CinemaMediaFrame
                   src={post.content.mediaUrl}
-                  alt={casting.projectTitle || "Casting poster"}
-                  aspect={post.content.aspect || "3:4"}
-                  aspectRatio={post.content.aspectRatio}
+                  alt={post.content.title || casting?.projectTitle || 'Movie poster'}
+                  aspect={post.content.aspect || '2:3'}
                   title={post.content.title}
+                  cameraSpec={post.content.cameraSpec || 'Official Movie Poster'}
                   type={post.content.mediaType}
+                  isPoster={true}
                   onDoubleTap={handleDoubleTap}
                 />
-                {/* Gradient overlay — title + caption on top of image */}
-                <div className="absolute bottom-0 left-0 right-0 px-4 pt-12 pb-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
-                  {post.content.title && (
-                    <h3 className="font-bold text-base text-foreground leading-snug mb-0.5 drop-shadow">
-                      {post.content.title}
-                    </h3>
-                  )}
-                  {post.content.text && (
-                    <p className="text-[13px] text-neutral-300 leading-relaxed line-clamp-2">
-                      {post.content.text}
-                    </p>
-                  )}
-                </div>
-                {/* Casting Call badge — top left */}
-                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-color)]/90 backdrop-blur-sm text-foreground text-[11px] font-bold tracking-wide shadow-lg">
-                  <Clapperboard className="w-3 h-3" />
-                  <span>Casting Call</span>
-                </div>
-              </>
-            ) : (
-              /* No media — text-only casting banner */
-              <div className="mx-3.5 sm:mx-4 my-1.5 rounded-2xl bg-neutral-900/80 border border-white/10 overflow-hidden p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-lg bg-[var(--theme-color)]/30 border border-[var(--theme-color)]/40 flex items-center justify-center text-[var(--theme-color)] shrink-0">
-                    <Clapperboard className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-[var(--theme-color)] text-foreground text-[10px] font-bold tracking-wider uppercase">
-                    Casting Call
-                  </span>
-                </div>
-                {post.content.title && (
-                  <h3 className="font-bold text-base text-foreground leading-snug mb-1">
-                    {post.content.title}
-                  </h3>
-                )}
-                {post.content.text && (
-                  <p className="text-sm text-neutral-300 leading-relaxed">{post.content.text}</p>
-                )}
               </div>
-            )}
-            {/* Heart pop on double tap */}
-            {showHeartPop && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                <Heart className="w-24 h-24 fill-white text-foreground ig-heart-pop drop-shadow-2xl" />
-              </div>
-            )}
-          </div>
-
-          {/* Casting Details Strip */}
-          <div className="px-3.5 sm:px-4 pt-3 pb-1 space-y-3">
-            {/* Project title (if no media, already shown above; here as fallback when media exists) */}
-
-            {/* Roles Needed */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] text-neutral-500 font-medium uppercase tracking-wider shrink-0">
-                Roles
-              </span>
-              {casting.rolesNeeded.map((r) => (
-                <span
-                  key={r}
-                  className="px-2.5 py-0.5 rounded-full bg-black/8 border border-border text-neutral-200 text-xs font-medium"
-                >
-                  {r}
-                </span>
-              ))}
-              <span className="ml-auto text-[11px] text-neutral-500 font-mono">
-                {casting.applicationCount} applied
-              </span>
             </div>
+          ) : (
+            <CinemaMediaFrame
+              src={post.content.mediaUrl}
+              alt={post.content.title || casting?.projectTitle || 'Cinema post'}
+              aspect={post.content.aspect || (post.type === 'casting' ? '16:9' : '16:9')}
+              title={post.content.title}
+              cameraSpec={post.content.cameraSpec}
+              type={post.content.mediaType}
+              isPoster={post.type === 'casting' || post.content.isPoster}
+              onDoubleTap={handleDoubleTap}
+            />
+          )}
 
-            {/* Meta chips row */}
-            {(casting.location ||
-              casting.languageRequirement ||
-              casting.deadline ||
-              casting.compensationAmount) && (
-              <div className="flex flex-wrap gap-2">
-                {casting.location && (
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/50 border border-white/8 text-neutral-300 text-[11px]">
-                    <MapPin className="w-3 h-3 text-[var(--theme-color)] shrink-0" />
-                    <span>{casting.location}</span>
-                  </div>
-                )}
-                {casting.languageRequirement && (
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/50 border border-white/8 text-neutral-300 text-[11px]">
-                    <Globe className="w-3 h-3 text-[var(--theme-color)] shrink-0" />
-                    <span>{casting.languageRequirement}</span>
-                  </div>
-                )}
-                {casting.deadline && (
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/50 border border-white/8 text-neutral-300 text-[11px]">
-                    <Calendar className="w-3 h-3 text-[var(--theme-color)] shrink-0" />
-                    <span>{casting.deadline}</span>
-                  </div>
-                )}
-                {(casting.compensationAmount || casting.compensationType) && (
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px]">
-                    <Banknote className="w-3 h-3 shrink-0" />
-                    <span>{casting.compensationAmount || casting.compensationType}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Hashtags */}
-            {displayTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 text-xs text-[var(--theme-color)] font-medium">
-                {displayTags.map((tag) => (
-                  <span key={tag} className="hover:underline cursor-pointer">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Tagged people */}
-            {post.taggedUsers && post.taggedUsers.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Users className="w-3 h-3 text-[var(--theme-color)]" />
-                {post.taggedUsers.map((identifier) => {
-                  const u = resolveUser(identifier);
-                  const label = u
-                    ? `@${u.username.replace(/^@/, "")}`
-                    : `@${identifier.replace(/^@/, "")}`;
-                  return (
-                    <button
-                      key={identifier}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTaggedUserClick(identifier);
-                      }}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--theme-color)]/10 border border-[var(--theme-color)]/25 text-[var(--theme-color)] text-[11px] font-medium hover:bg-[var(--theme-color)]/20 transition-all"
-                    >
-                      {u?.avatar && (
-                        <img
-                          src={u.avatar}
-                          alt=""
-                          className="w-3.5 h-3.5 rounded-full object-cover"
-                        />
-                      )}
-                      <span>{label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Audition note + Apply CTA */}
-            <div className="flex items-center justify-between gap-3 pt-0.5 pb-1">
-              <p className="text-[11px] text-neutral-500 truncate flex-1">
-                {casting.requirementsNote || ""}
-              </p>
-              <button
-                onClick={() => {
-                  hapticMedium();
-                  onOpenApply(post);
-                }}
-                className="shrink-0 whitespace-nowrap px-4 py-1.5 rounded-lg bg-[var(--theme-color)] hover:bg-[#9d4edd] text-foreground font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-md shadow-[var(--theme-color)]/20"
-              >
-                <Clapperboard className="w-3.5 h-3.5 shrink-0" />
-                <span>Apply for Role</span>
-              </button>
+          {/* Animated Heart Pop on Double Tap */}
+          {showHeartPop && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <Heart className="w-24 h-24 fill-[#FF6B00] text-[#FF6B00] animate-heart-pop drop-shadow-2xl" />
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* 5. Action Row (Heart, Comment, Share ... Bookmark) */}
-      <div className="px-3.5 sm:px-4 pt-2.5 pb-1 flex items-center justify-between text-neutral-200">
-        <div className="flex items-center gap-4 sm:gap-5">
+      {/* UNIFIED CASTING / HIRING POST CARD (Single clean container, no duplication) */}
+      {post.type === 'casting' && casting && (
+        <div className="mx-3 my-2 rounded-2xl bg-[#0A0E17] border border-white/10 shadow-md overflow-hidden transition-all duration-300">
+          {/* Header Row (Always visible once, never duplicated) */}
+          <div className="p-3 sm:p-3.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="w-8 h-8 rounded-xl bg-[#FF6B00]/15 border border-[#FF6B00]/30 flex items-center justify-center text-[#FF6B00] shrink-0">
+                <Clapperboard className="w-4 h-4" />
+              </div>
+              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#FF6B00] text-white font-mono text-[10px] font-bold tracking-wider uppercase shrink-0 whitespace-nowrap shadow-sm">
+                  Casting Call
+                </span>
+                <span className="text-xs font-bold text-white truncate max-w-[140px] sm:max-w-none">
+                  {casting.projectTitle}
+                </span>
+                <span className="text-xs text-neutral-400 font-medium truncate">
+                  · {casting.projectType}
+                </span>
+                <span className="text-[11px] font-mono text-[#FFB800] shrink-0 whitespace-nowrap">
+                  · {casting.applicationCount} applied
+                </span>
+              </div>
+            </div>
+
+            {/* Toggle button ONLY for posts with posters/images */}
+            {post.content.mediaUrl && (
+              <button
+                type="button"
+                onClick={() => setShowInlineCastingDetails((prev) => !prev)}
+                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all border ${
+                  showInlineCastingDetails
+                    ? 'bg-white/15 border-white/25 text-white'
+                    : 'bg-white/10 hover:bg-white/20 border-white/15 text-neutral-200 hover:text-white'
+                }`}
+              >
+                <span>{showInlineCastingDetails ? 'Hide Details' : 'Details'}</span>
+                {showInlineCastingDetails ? (
+                  <ChevronUp className="w-3.5 h-3.5 text-[#FFB800]" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5 text-[#FF6B00]" />
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Text-Only Production Notice Ribbon if no poster image */}
+          {!post.content.mediaUrl && (
+            <div className="mx-3.5 mb-2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-mono text-[#FFB800]">
+              <FileText className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
+              <span>OFFICIAL PRODUCTION SLATE · TEXT-ONLY NOTICE</span>
+            </div>
+          )}
+
+          {/* Expanded Details Body & Apply Button (Smooth fade & reveal, no duplication) */}
+          {(!post.content.mediaUrl || showInlineCastingDetails) && (
+            <div className="px-3.5 sm:px-4 pb-4 pt-3 space-y-3.5 border-t border-white/10 animate-fade-in">
+              {/* Project Title & Description */}
+              <div>
+                <h4 className="font-brand font-bold text-base text-white tracking-tight leading-snug">
+                  {casting.projectTitle}
+                </h4>
+                <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                  {post.content.text}
+                </p>
+              </div>
+
+              {/* Roles Needed Tags */}
+              <div className="space-y-1">
+                <div className="text-[11px] text-[#94A3B8] font-medium">
+                  Roles Needed:
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {casting.rolesNeeded.map((r) => (
+                    <span
+                      key={r}
+                      className="px-3 py-1 rounded-full bg-white/10 border border-white/10 text-neutral-200 text-xs font-medium whitespace-nowrap shadow-sm"
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Production Specs & Compensation Row */}
+              <div className="p-3 bg-black/60 rounded-xl border border-white/5 space-y-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-neutral-300">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <MapPin className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
+                    <span className="truncate">{casting.location}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Globe className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
+                    <span className="truncate">{casting.languageRequirement}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Calendar className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
+                    <span className="truncate">Deadline: {casting.deadline}</span>
+                  </div>
+                </div>
+
+                {/* Compensation Row */}
+                <div className="pt-2 border-t border-white/5 flex items-start gap-2">
+                  <Banknote className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] uppercase font-mono tracking-wider text-[#94A3B8] block font-semibold">
+                      Compensation
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-400 leading-snug break-words">
+                      {casting.compensationAmount || casting.compensationType}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Row for Casting: In-App Apply Button (Visible only here after clicking Details!) */}
+              <div className="pt-1 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] text-[#94A3B8] truncate">
+                    {casting.requirementsNote || 'Audition reel required'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => onOpenApply(post)}
+                  className="shrink-0 whitespace-nowrap px-4 py-2 rounded-full bg-[#FF6B00] hover:bg-[#E05300] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95 shadow-md shadow-[#FF6B00]/20"
+                >
+                  <Clapperboard className="w-3.5 h-3.5 shrink-0" />
+                  <span>Apply for Role</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Engagement Actions Row */}
+      <div className="px-4 pt-3 pb-2.5 flex items-center justify-between text-neutral-300 border-t border-white/10">
+        <div className="flex items-center gap-5 sm:gap-6">
           {/* Like */}
           <button
-            onClick={handleLike}
-            className="flex items-center group focus:outline-none"
+            onClick={() => onLikeToggle(post.id)}
+            className="flex items-center gap-1.5 group focus:outline-none hover:text-white transition-colors active:scale-90"
             aria-label="Like post"
           >
-            <span
-              className={`inline-flex transition-transform duration-200 ${likeScale ? "ig-like-bounce" : ""}`}
-            >
-              <Heart
-                className={`w-[24px] h-[24px] transition-all duration-150 ${
-                  post.isLiked
-                    ? "fill-red-500 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]"
-                    : "text-neutral-200 group-hover:text-muted-foreground"
-                }`}
-                strokeWidth={1.75}
-              />
+            <Heart
+              className={`w-4 h-4 transition-transform ${
+                post.isLiked
+                  ? 'fill-[#FF6B00] text-[#FF6B00]'
+                  : 'group-hover:text-[#FF6B00]'
+              }`}
+            />
+            <span className={`text-xs font-medium ${post.isLiked ? 'text-[#FF6B00] font-semibold' : 'text-neutral-300'}`}>
+              Like {post.likes > 0 && `(${post.likes})`}
             </span>
           </button>
 
           {/* Comment */}
           <button
-            onClick={() => {
-              hapticLight();
-              setShowInlineComments((prev) => !prev);
-            }}
-            className="flex items-center focus:outline-none group"
+            onClick={() => setShowInlineComments((prev) => !prev)}
+            className={`flex items-center gap-1.5 transition-colors focus:outline-none active:scale-90 ${
+              showInlineComments ? 'text-[#FFB800]' : 'hover:text-white text-neutral-300'
+            }`}
             aria-label="Toggle comments"
           >
             <MessageCircle
-              className="w-[24px] h-[24px] text-neutral-200 group-hover:text-muted-foreground transition-colors"
-              strokeWidth={1.75}
+              className={`w-4 h-4 transition-colors ${
+                showInlineComments ? 'text-[#FFB800]' : 'text-[#94A3B8]'
+              }`}
             />
+            <span className="text-xs font-medium lowercase">
+              comment {post.commentsCount > 0 && `(${post.commentsCount})`}
+            </span>
           </button>
 
           {/* Share */}
           <button
-            onClick={handleShare}
-            className="flex items-center group focus:outline-none"
+            onClick={() => onOpenShare(post)}
+            className="flex items-center gap-1.5 hover:text-white transition-colors focus:outline-none active:scale-90"
             aria-label="Share post"
           >
-            <Send
-              className="w-[24px] h-[24px] text-neutral-200 group-hover:text-muted-foreground transition-colors"
-              strokeWidth={1.75}
-            />
+            <Share2 className="w-4 h-4 text-[#94A3B8] hover:text-[#FFB800] transition-colors" />
+            <span className="text-xs font-medium text-neutral-300">
+              Share
+            </span>
           </button>
         </div>
 
         {/* Save / Bookmark */}
         <button
-          onClick={handleSave}
-          className={`focus:outline-none transition-transform ${saveScale ? "ig-save-bounce" : ""}`}
+          onClick={() => onSaveToggle(post.id)}
+          className="p-1 hover:text-[#FFB800] transition-colors focus:outline-none active:scale-90"
           aria-label="Save post"
           title="Save post"
         >
           <Bookmark
-            className={`w-[24px] h-[24px] transition-all duration-150 ${
-              post.isSaved
-                ? "fill-white text-foreground drop-shadow-[0_0_6px_rgba(255,255,255,0.4)]"
-                : "text-neutral-200 hover:text-muted-foreground"
+            className={`w-4 h-4 ${
+              post.isSaved ? 'fill-[#FF6B00] text-[#FF6B00]' : 'text-[#94A3B8]'
             }`}
-            strokeWidth={1.75}
           />
         </button>
       </div>
 
-      {/* 6. Engagement Metrics */}
-      <div className="px-3.5 sm:px-4 space-y-1 text-left">
-        {/* Likes Count */}
-        {post.likes > 0 && (
-          <div className="font-semibold text-xs sm:text-sm text-foreground">
-            {post.likes.toLocaleString()} {post.likes === 1 ? "like" : "likes"}
-          </div>
-        )}
-
-        {/* View All Comments Link */}
-        {post.commentsCount > 0 && (
-          <button
-            onClick={() => {
-              hapticLight();
-              onOpenComments(post);
-            }}
-            className="text-xs text-muted-foreground hover:text-neutral-300 font-medium block pt-0.5 focus:outline-none"
-          >
-            View all {post.commentsCount} {post.commentsCount === 1 ? "comment" : "comments"}
-          </button>
-        )}
-
-        {/* First Comment Preview (if comments exist) */}
-        {post.comments.length > 0 && (
-          <div className="text-xs text-neutral-300 truncate">
-            <button
-              type="button"
-              onClick={() => {
-                hapticLight();
-                onUserClick(post.comments[0].author);
-              }}
-              className="font-semibold text-foreground mr-1.5 hover:underline focus:outline-none"
-            >
-              {post.comments[0].author.username}
-            </button>
-            <span>{post.comments[0].text}</span>
-          </div>
-        )}
-      </div>
-
-      {/* 7. Inline Quick Comment Form (when expanded) */}
+      {/* Collapsible Comment Section (Closed by default) */}
       {showInlineComments && (
-        <form
-          onSubmit={handleQuickCommentSubmit}
-          className="mx-3.5 sm:mx-4 mt-2.5 pt-2 border-t border-neutral-900 flex items-center gap-2"
-        >
-          <input
-            type="text"
-            value={commentInput}
-            onChange={(e) => setCommentInput(e.target.value)}
-            placeholder="Add a comment..."
-            autoFocus
-            className="flex-1 bg-transparent text-xs text-foreground placeholder-neutral-500 focus:outline-none py-1"
-          />
-          <button
-            type="submit"
-            disabled={!commentInput.trim()}
-            className="text-xs font-semibold text-[var(--theme-color)] hover:text-[var(--theme-hover)] disabled:opacity-30 disabled:hover:text-[var(--theme-color)] transition-colors"
-          >
-            Post
-          </button>
-        </form>
-      )}
+        <div className="border-t border-white/10 bg-[#0A0E17]/40 animate-fade-in">
+          {/* Comment Section Teaser */}
+          {post.commentsCount > 0 && (
+            <div className="px-4 pt-3 pb-2">
+              <button
+                onClick={() => onOpenComments(post)}
+                className="text-xs text-[#94A3B8] hover:text-[#FFB800] transition-colors font-medium block"
+              >
+                View all {post.commentsCount} comments
+              </button>
+              {post.comments.length > 0 && (
+                <div className="text-xs text-neutral-300 mt-1.5 truncate">
+                  <span className="font-semibold text-white mr-1.5">
+                    {post.comments[0].author.username}
+                  </span>
+                  <span>{post.comments[0].text}</span>
+                </div>
+              )}
+            </div>
+          )}
 
-      {/* 8. Delete Confirmation Modal */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent className="bg-card border border-border text-foreground rounded-2xl max-w-[320px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold font-brand text-left">Delete Post?</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground text-left text-[14px]">
-              Are you sure you want to delete this post? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4 flex gap-2">
-            <AlertDialogCancel className="flex-1 rounded-xl bg-secondary text-foreground border-0 hover:bg-neutral-700 hover:text-foreground mt-0">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-foreground border-0"
-              onClick={() => {
-                if (onDelete) onDelete(post.id);
-                setShowDeleteConfirm(false);
-              }}
+          {/* Inline Quick Comment Form */}
+          <form
+            onSubmit={handleQuickCommentSubmit}
+            className="px-4 py-2.5 border-t border-white/5 flex items-center gap-2"
+          >
+            <div className="flex-1 flex items-center bg-white/5 rounded-full px-3.5 py-1.5 border border-white/10 focus-within:border-[#FF6B00]">
+              <input
+                type="text"
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder="Add a comment..."
+                autoFocus
+                className="flex-1 bg-transparent text-xs text-white placeholder-[#94A3B8] focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!commentInput.trim()}
+              className="w-7 h-7 rounded-full bg-[#FF6B00] text-white flex items-center justify-center disabled:opacity-40 disabled:bg-white/10 disabled:text-neutral-500 transition-all active:scale-90"
             >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              <Send className="w-3 h-3" />
+            </button>
+          </form>
+        </div>
+      )}
     </article>
   );
 };

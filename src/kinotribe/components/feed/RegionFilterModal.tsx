@@ -1,7 +1,7 @@
-import React from "react";
-import { X, Globe, MapPin, Check } from "lucide-react";
-import { COUNTRIES_DATA, LANGUAGES_LIST } from "../../data/mockCinemaData";
-import { FeedFilterMode } from "../../types";
+import React from 'react';
+import { X, Globe, MapPin, Check } from 'lucide-react';
+import { COUNTRIES_DATA, LANGUAGES_LIST } from '../../data/mockCinemaData';
+import { FeedFilterMode } from '../../types';
 
 interface RegionFilterModalProps {
   isOpen: boolean;
@@ -31,26 +31,22 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/60 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md apple-glass-card border border-border text-neutral-100 rounded-[32px] shadow-2xl overflow-hidden max-h-[88vh] flex flex-col backdrop-blur-3xl apple-modal-enter">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-md bg-[#121826] border border-white/10 text-neutral-100 rounded-2xl shadow-2xl overflow-hidden max-h-[88vh] flex flex-col">
         {/* Header */}
-        <div className="px-5 py-3.5 border-b border-border flex items-center justify-between apple-glass-subtle">
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-white" />
-              <div>
-                <h3 className="font-brand font-bold text-sm text-foreground">
-                  Cinema Region & Language
-                </h3>
-                <span className="text-[9px] text-muted-foreground font-mono block">
-                  REGIONAL & LANGUAGE DISCOVERY
-                </span>
-              </div>
+        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-[#0A0E17]/60">
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-[#FFB800]" />
+            <div>
+              <h3 className="font-brand font-bold text-base">Cinema Feed Region</h3>
+              <span className="text-[10px] text-[#94A3B8] font-mono">
+                REGIONAL & LANGUAGE DISCOVERY
+              </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10"
           >
             <X className="w-4 h-4" />
           </button>
@@ -59,46 +55,50 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
         <div className="p-5 overflow-y-auto space-y-5 text-xs">
           {/* Main 3 Modes */}
           <div className="space-y-2">
-            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block">
+            <span className="text-[10px] font-mono text-[#94A3B8] uppercase tracking-wider block">
               CHOOSE FEED VIEW
             </span>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => {
-                  onSetFilterMode("regional");
+                  onSetFilterMode('regional');
                   onSelectCountry(userCountry);
                   onSelectLanguage(userLanguage);
                 }}
                 className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-colors ${
-                  filterMode === "regional"
-                    ? "bg-[var(--theme-color)]/15 border-[var(--theme-color)] text-foreground"
-                    : "bg-background/50 border-border text-muted-foreground hover:border-border"
+                  filterMode === 'regional'
+                    ? 'bg-[#FF6B00]/15 border-[#FF6B00] text-white'
+                    : 'bg-black/50 border-white/10 text-neutral-400 hover:border-white/20'
                 }`}
               >
-                <MapPin className="w-4 h-4 mb-1 text-white" />
+                <MapPin className="w-4 h-4 mb-1 text-[#FFB800]" />
                 <span className="font-bold text-xs">My Region</span>
-                <span className="text-[10px] text-neutral-500 truncate mt-0.5">{userCountry}</span>
+                <span className="text-[10px] text-neutral-500 truncate mt-0.5">
+                  {userCountry}
+                </span>
               </button>
 
               <button
-                onClick={() => onSetFilterMode("global")}
+                onClick={() => onSetFilterMode('global')}
                 className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-colors ${
-                  filterMode === "global"
-                    ? "bg-[var(--theme-color)]/15 border-[var(--theme-color)] text-foreground"
-                    : "bg-background/50 border-border text-muted-foreground hover:border-border"
+                  filterMode === 'global'
+                    ? 'bg-[#FF6B00]/15 border-[#FF6B00] text-white'
+                    : 'bg-black/50 border-white/10 text-neutral-400 hover:border-white/20'
                 }`}
               >
-                <Globe className="w-4 h-4 mb-1 text-white" />
+                <Globe className="w-4 h-4 mb-1 text-[#FFB800]" />
                 <span className="font-bold text-xs">Global Feed</span>
-                <span className="text-[10px] text-neutral-500 truncate mt-0.5">All Countries</span>
+                <span className="text-[10px] text-neutral-500 truncate mt-0.5">
+                  All Countries
+                </span>
               </button>
 
               <button
-                onClick={() => onSetFilterMode("custom")}
+                onClick={() => onSetFilterMode('custom')}
                 className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-colors ${
-                  filterMode === "custom"
-                    ? "bg-[var(--theme-color)]/15 border-[var(--theme-color)] text-foreground"
-                    : "bg-background/50 border-border text-muted-foreground hover:border-border"
+                  filterMode === 'custom'
+                    ? 'bg-[#FF6B00]/15 border-[#FF6B00] text-white'
+                    : 'bg-black/50 border-white/10 text-neutral-400 hover:border-white/20'
                 }`}
               >
                 <span className="text-base mb-1">🎯</span>
@@ -111,13 +111,13 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
           </div>
 
           {/* Select Specific Country */}
-          {filterMode === "custom" && (
+          {filterMode === 'custom' && (
             <>
               <div>
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block mb-2">
+                <span className="text-[10px] font-mono text-[#94A3B8] uppercase tracking-wider block mb-2">
                   SELECT COUNTRY TO BROWSE
                 </span>
-                <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto p-1 bg-background/50 rounded-xl border border-border">
+                <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto p-1 bg-black/50 rounded-xl border border-white/10">
                   {COUNTRIES_DATA.map((c) => {
                     const isSelected = activeCountry === c.name;
                     return (
@@ -129,14 +129,14 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
                         }}
                         className={`p-2 rounded-lg text-left flex items-center justify-between text-xs transition-colors ${
                           isSelected
-                            ? "bg-[var(--theme-color)]/20 text-foreground font-bold border border-[var(--theme-color)]/40"
-                            : "text-neutral-300 hover:bg-muted/50"
+                            ? 'bg-[#FF6B00]/20 text-white font-bold border border-[#FF6B00]/40'
+                            : 'text-neutral-300 hover:bg-white/5'
                         }`}
                       >
                         <span className="truncate">
                           {c.flag} {c.name}
                         </span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />}
                       </button>
                     );
                   })}
@@ -144,10 +144,10 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
               </div>
 
               <div>
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block mb-2">
+                <span className="text-[10px] font-mono text-[#94A3B8] uppercase tracking-wider block mb-2">
                   SELECT LANGUAGE
                 </span>
-                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-1 bg-background/50 rounded-xl border border-border">
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-1 bg-black/50 rounded-xl border border-white/10">
                   {LANGUAGES_LIST.map((l) => {
                     const isSelected = activeLanguage === l;
                     return (
@@ -156,8 +156,8 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
                         onClick={() => onSelectLanguage(l)}
                         className={`px-2.5 py-1 rounded-md text-xs transition-colors ${
                           isSelected
-                            ? "bg-[var(--theme-color)] text-foreground font-bold"
-                            : "bg-muted text-neutral-300 hover:bg-black/15"
+                            ? 'bg-[#FF6B00] text-white font-bold'
+                            : 'bg-white/10 text-neutral-300 hover:bg-white/15'
                         }`}
                       >
                         {l}
@@ -171,7 +171,7 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-full py-2.5 rounded-full bg-[var(--theme-color)] hover:bg-[var(--theme-hover)] text-foreground font-bold text-xs shadow-md shadow-[var(--theme-color)]/20 transition-transform active:scale-95"
+            className="w-full py-2.5 rounded-full bg-[#FF6B00] hover:bg-[#E05300] text-white font-bold text-xs shadow-md shadow-[#FF6B00]/20 transition-transform active:scale-95"
           >
             Apply Region & Refresh Feed
           </button>

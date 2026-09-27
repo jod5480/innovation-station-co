@@ -1,18 +1,18 @@
 export type CinemaRole =
-  | "Acting"
-  | "Directing"
-  | "Screenwriting"
-  | "Cinematography"
-  | "Film Editing"
-  | "Producing"
-  | "Sound Design / Mixing"
-  | "VFX / Animation"
-  | "Costume & Makeup"
-  | "Casting Direction"
-  | "Music Composition"
-  | "Production Design";
+  | 'Acting'
+  | 'Directing'
+  | 'Screenwriting'
+  | 'Cinematography'
+  | 'Film Editing'
+  | 'Producing'
+  | 'Sound Design / Mixing'
+  | 'VFX / Animation'
+  | 'Costume & Makeup'
+  | 'Casting Direction'
+  | 'Music Composition'
+  | 'Production Design';
 
-export type ExperienceLevel = "Newcomer" | "Mid-level" | "Experienced";
+export type ExperienceLevel = 'Student' | 'Amateur' | 'Professional';
 
 export interface User {
   id: string;
@@ -39,27 +39,27 @@ export interface User {
 }
 
 export type ProjectType =
-  | "Feature Film"
-  | "Short Film"
-  | "Web Series"
-  | "Commercial / Ad"
-  | "Theatre / Stage"
-  | "Documentary";
+  | 'Feature Film'
+  | 'Short Film'
+  | 'Web Series'
+  | 'Commercial / Ad'
+  | 'Theatre / Stage'
+  | 'Documentary';
 
 export interface CastingDetails {
   projectTitle: string;
   projectType: ProjectType;
   rolesNeeded: CinemaRole[];
-  location?: string;
+  location: string;
   country: string;
   countryCode: string;
   languageRequirement: string;
-  compensationType: "Paid" | "Unpaid" | "Negotiable";
+  compensationType: 'Paid' | 'Unpaid' | 'Negotiable';
   compensationAmount?: string;
   deadline: string; // e.g. '2026-10-15'
   requirementsNote?: string;
   applicationCount: number;
-  howToApply: "in_app" | "external_link";
+  howToApply: 'in_app' | 'external_link';
   externalContact?: string;
 }
 
@@ -77,17 +77,15 @@ export interface Post {
   authorId: string;
   author: User;
   createdAt: string;
-  type: "photo" | "video" | "text" | "casting";
+  type: 'photo' | 'video' | 'text' | 'casting';
   content: {
     text?: string;
     mediaUrl?: string;
-    mediaType?: "image" | "video";
-    aspect?: "1:1" | "16:9" | "4:5" | "2.39:1" | "2:3" | "3:4" | "auto";
-    aspectRatio?: number;
+    mediaType?: 'image' | 'video';
+    aspect?: '1:1' | '16:9' | '4:5' | '2.39:1' | '2:3' | '3:4';
     title?: string;
     cameraSpec?: string; // e.g. "Arri Alexa Mini LF · Cooke Anamorphic /i"
     isPoster?: boolean;
-    location?: string;
   };
   castingDetails?: CastingDetails;
   country: string;
@@ -101,7 +99,6 @@ export interface Post {
   isPortfolio?: boolean;
   portfolioRole?: string;
   tags: string[];
-  taggedUsers?: string[];
 }
 
 export interface Application {
@@ -113,7 +110,7 @@ export interface Application {
   selectedRole: CinemaRole;
   coverNote: string;
   portfolioUrl: string;
-  status: "Submitted" | "Under Review" | "Shortlisted" | "Selected";
+  status: 'Submitted' | 'Under Review' | 'Shortlisted' | 'Selected';
   submittedAt: string;
 }
 
@@ -124,14 +121,12 @@ export interface StoryItem {
   caption: string;
   roleBadge: CinemaRole;
   timestamp: string;
-  createdAt?: string; // ISO string, used for 24h expiry
   viewed?: boolean;
-  linkedPostId?: string;
 }
 
 export interface NotificationItem {
   id: string;
-  type: "casting_match" | "new_follower" | "like" | "comment" | "application_status";
+  type: 'casting_match' | 'new_follower' | 'like' | 'comment' | 'application_status';
   actor: User;
   message: string;
   targetPostId?: string;
@@ -156,4 +151,4 @@ export interface DirectMessageConversation {
   messages: ChatMessage[];
 }
 
-export type FeedFilterMode = "regional" | "global" | "custom";
+export type FeedFilterMode = 'regional' | 'global' | 'custom';
