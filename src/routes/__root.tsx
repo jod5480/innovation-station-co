@@ -105,10 +105,24 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body>
         {children}
         <Scripts />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js').catch(error => {
+                    console.error('ServiceWorker registration failed: ', error);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

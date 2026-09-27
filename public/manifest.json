@@ -1,0 +1,16 @@
+{
+  "name": "KinoTribe",
+  "short_name": "KinoTribe",
+  "description": "The social network for filmmakers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#DC143C",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
