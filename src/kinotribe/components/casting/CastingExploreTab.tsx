@@ -1,16 +1,7 @@
-import React from 'react';
-import {
-  Clapperboard,
-  MapPin,
-  Calendar,
-  Globe,
-  Bookmark,
-  Banknote,
-  Users,
-  FileText,
-  Sparkles,
-} from 'lucide-react';
-import { Post, User } from '../../types';
+import React from "react";
+import { Clapperboard, MapPin, Calendar, Globe, Bookmark, Banknote } from "lucide-react";
+import { Post, User } from "../../types";
+import { CinemaMediaFrame } from "../../utils/cinemaMedia";
 
 interface CastingExploreTabProps {
   posts: Post[];
@@ -27,15 +18,13 @@ export const CastingExploreTab: React.FC<CastingExploreTabProps> = ({
   onSaveToggle,
   onUserClick,
 }) => {
-  // Filter casting posts
-  const castingPosts = posts.filter((p) => p.type === 'casting' && p.castingDetails);
+  const castingPosts = posts.filter((p) => p.type === "casting" && p.castingDetails);
 
   return (
-    <div className="w-full space-y-4 pb-20 pt-1">
-      {/* Casting Post Cards Stream */}
-      <div className="space-y-4">
+    <div className="w-full pb-20 pt-1">
+      <div className="space-y-0">
         {castingPosts.length === 0 ? (
-          <div className="p-12 text-center bg-neutral-900/60 rounded-2xl border border-neutral-800">
+          <div className="p-12 text-center apple-glass-card rounded-[28px] border border-border shadow-xl">
             <Clapperboard className="w-10 h-10 text-neutral-600 mx-auto mb-2" />
             <h4 className="text-sm font-bold text-neutral-300">No active casting calls</h4>
             <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto">
@@ -46,159 +35,194 @@ export const CastingExploreTab: React.FC<CastingExploreTabProps> = ({
           castingPosts.map((post) => {
             const casting = post.castingDetails!;
             return (
-              <div
+              <article
                 key={post.id}
-                className="p-5 rounded-[24px] bg-[#121826] border border-white/10 hover:border-[#FF6B00]/40 transition-all shadow-[0_4px_20px_rgba(0,0,0,0.35)] space-y-3.5"
+                className="w-full bg-background border-b border-neutral-800/80 pb-3 mb-2 select-none text-left"
               >
-                {/* Poster & Type Header */}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                {/* Author Header */}
+                <div className="px-3.5 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
                     <button
                       onClick={() => onUserClick(post.author)}
-                      className="shrink-0 active:scale-95 transition-transform"
+                      className="relative shrink-0 active:scale-95 transition-transform"
                     >
-                      <img
-                        src={post.author.avatar}
-                        alt={post.author.name}
-                        className="w-10 h-10 rounded-full object-cover border border-[#FF6B00]/40 shadow-sm"
-                      />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full p-[1.5px] bg-gradient-to-tr from-neutral-800 to-neutral-700 hover:from-[var(--theme-color)] hover:to-[#000000] transition-all overflow-hidden">
+                        <img
+                          src={post.author.avatar}
+                          alt={post.author.name}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      </div>
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[var(--theme-color)] text-foreground flex items-center justify-center text-[8px] font-bold ring-2 ring-black">
+                        🎬
+                      </span>
                     </button>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <button
                           onClick={() => onUserClick(post.author)}
-                          className="font-brand font-bold text-sm text-white hover:text-[#FF6B00] truncate"
+                          className="font-semibold text-sm text-foreground hover:text-neutral-300 transition-colors"
+                        >
+                          {post.author.username}
+                        </button>
+                        <span className="text-neutral-500 text-xs">·</span>
+                        <span className="text-muted-foreground text-xs">{post.createdAt}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <button
+                          onClick={() => onUserClick(post.author)}
+                          className="text-neutral-300 hover:text-foreground font-medium"
                         >
                           {post.author.name}
                         </button>
-                        <span className="text-xs text-[#94A3B8] truncate">
-                          @{post.author.username}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#94A3B8] truncate">
-                        <span className="text-[#FFB800] font-medium">{casting.projectType}</span>
                         <span>·</span>
-                        <span>{post.country}</span>
-                        <span>·</span>
-                        <span>{post.createdAt}</span>
+                        <span className="text-[var(--theme-color)] font-medium">{casting.projectType}</span>
+                        {post.country && (
+                          <>
+                            <span>·</span>
+                            <span>{post.country}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Bookmark Button */}
                   <button
                     onClick={() => onSaveToggle(post.id)}
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-400 hover:text-[#FFB800] hover:bg-white/10 transition-colors active:scale-90 shrink-0 border border-white/5"
-                    title={post.isSaved ? 'Saved to bookmarks' : 'Save casting call'}
+                    className="text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors active:scale-90"
+                    title={post.isSaved ? "Saved" : "Save casting call"}
                   >
                     <Bookmark
-                      className={`w-4 h-4 ${
-                        post.isSaved ? 'fill-[#FF6B00] text-[#FF6B00]' : ''
-                      }`}
+                      className={`w-5 h-5 ${post.isSaved ? "fill-white text-foreground" : ""}`}
+                      strokeWidth={1.75}
                     />
                   </button>
                 </div>
 
-                {/* Project Title, Poster & Description */}
-                <div className="flex items-start gap-3.5">
+                {/* Full-width media with gradient overlay */}
+                <div className="relative w-full overflow-hidden">
                   {post.content.mediaUrl ? (
-                    <div className="relative shrink-0 w-20 sm:w-24 aspect-[2/3] rounded-xl overflow-hidden border border-white/10 shadow-md bg-black group">
-                      <img
+                    <>
+                      <CinemaMediaFrame
                         src={post.content.mediaUrl}
-                        alt={casting.projectTitle}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        alt={casting.projectTitle || "Casting poster"}
+                        aspect={post.content.aspect || "3:4"}
+                        aspectRatio={post.content.aspectRatio}
+                        title={post.content.title}
+                        type={post.content.mediaType}
                       />
-                      <div className="absolute top-1 left-1 px-1 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[8px] font-mono text-[#FFB800] font-bold">
-                        POSTER
+                      {/* Gradient overlay with title + caption */}
+                      <div className="absolute bottom-0 left-0 right-0 px-4 pt-12 pb-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
+                        {post.content.title && (
+                          <h3 className="font-bold text-base text-foreground leading-snug mb-0.5 drop-shadow">
+                            {post.content.title}
+                          </h3>
+                        )}
+                        {post.content.text && (
+                          <p className="text-[13px] text-neutral-300 leading-relaxed line-clamp-2">
+                            {post.content.text}
+                          </p>
+                        )}
                       </div>
-                    </div>
+                      {/* Casting Call badge */}
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-color)]/90 backdrop-blur-sm text-foreground text-[11px] font-bold tracking-wide shadow-lg">
+                        <Clapperboard className="w-3 h-3" />
+                        <span>Casting Call</span>
+                      </div>
+                    </>
                   ) : (
-                    <div className="shrink-0 w-12 sm:w-14 h-16 sm:h-20 rounded-xl bg-black/60 border border-dashed border-white/15 flex flex-col items-center justify-center text-[#94A3B8] p-1 text-center">
-                      <Clapperboard className="w-4 h-4 text-[#FF6B00] mb-1" />
-                      <span className="text-[8px] font-mono leading-none">SLATE</span>
+                    <div className="mx-3.5 sm:mx-4 my-1.5 rounded-2xl bg-neutral-900/80 border border-white/10 overflow-hidden p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 rounded-lg bg-[var(--theme-color)]/30 border border-[var(--theme-color)]/40 flex items-center justify-center text-[var(--theme-color)] shrink-0">
+                          <Clapperboard className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-[var(--theme-color)] text-foreground text-[10px] font-bold tracking-wider uppercase">
+                          Casting Call
+                        </span>
+                      </div>
+                      {post.content.title && (
+                        <h3 className="font-bold text-base text-foreground leading-snug mb-1">
+                          {post.content.title}
+                        </h3>
+                      )}
+                      {post.content.text && (
+                        <p className="text-sm text-neutral-300 leading-relaxed">
+                          {post.content.text}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Casting Details Strip */}
+                <div className="px-3.5 sm:px-4 pt-3 pb-1 space-y-3">
+                  {/* Roles + applied count */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[11px] text-neutral-500 font-medium uppercase tracking-wider shrink-0">
+                      Roles
+                    </span>
+                    {casting.rolesNeeded.map((r) => (
+                      <span
+                        key={r}
+                        className="px-2.5 py-0.5 rounded-full bg-black/8 border border-border text-neutral-200 text-xs font-medium"
+                      >
+                        {r}
+                      </span>
+                    ))}
+                    <span className="ml-auto text-[11px] text-neutral-500 font-mono">
+                      {casting.applicationCount} applied
+                    </span>
+                  </div>
+
+                  {/* Meta chips */}
+                  {(casting.location ||
+                    casting.languageRequirement ||
+                    casting.deadline ||
+                    casting.compensationAmount ||
+                    casting.compensationType) && (
+                    <div className="flex flex-wrap gap-2">
+                      {casting.location && (
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/50 border border-white/8 text-neutral-300 text-[11px]">
+                          <MapPin className="w-3 h-3 text-[var(--theme-color)] shrink-0" />
+                          <span>{casting.location}</span>
+                        </div>
+                      )}
+                      {casting.languageRequirement && (
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/50 border border-white/8 text-neutral-300 text-[11px]">
+                          <Globe className="w-3 h-3 text-[var(--theme-color)] shrink-0" />
+                          <span>{casting.languageRequirement}</span>
+                        </div>
+                      )}
+                      {casting.deadline && (
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/50 border border-white/8 text-neutral-300 text-[11px]">
+                          <Calendar className="w-3 h-3 text-[var(--theme-color)] shrink-0" />
+                          <span>{casting.deadline}</span>
+                        </div>
+                      )}
+                      {(casting.compensationAmount || casting.compensationType) && (
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px]">
+                          <Banknote className="w-3 h-3 shrink-0" />
+                          <span>{casting.compensationAmount || casting.compensationType}</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h3 className="font-brand font-bold text-lg text-white tracking-tight leading-snug">
-                        {casting.projectTitle}
-                      </h3>
-                      {!post.content.mediaUrl && (
-                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-[#FFB800] text-[10px] font-mono font-medium flex items-center gap-1">
-                          <FileText className="w-2.5 h-2.5" /> Text-Only Notice
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-neutral-300 leading-relaxed line-clamp-3">
-                      {post.content.text}
+                  {/* Apply CTA */}
+                  <div className="flex items-center justify-between gap-3 pt-0.5 pb-1">
+                    <p className="text-[11px] text-neutral-500 truncate flex-1">
+                      {casting.requirementsNote || ""}
                     </p>
-                  </div>
-                </div>
-
-                {/* Roles Needed Badges */}
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {casting.rolesNeeded.map((role) => (
-                    <span
-                      key={role}
-                      className="px-3 py-1 rounded-full bg-white/10 border border-white/10 text-neutral-200 text-xs font-medium whitespace-nowrap shadow-sm"
+                    <button
+                      onClick={() => onOpenApply(post)}
+                      className="shrink-0 whitespace-nowrap px-4 py-1.5 rounded-lg bg-[var(--theme-color)] hover:bg-[#9d4edd] text-foreground font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-md shadow-[var(--theme-color)]/20"
                     >
-                      {role}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Production Specs & Compensation Inset Box */}
-                <div className="p-3.5 bg-black/60 rounded-2xl border border-white/5 space-y-2.5">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                    <div className="flex items-center gap-2 text-neutral-300 min-w-0">
-                      <MapPin className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
-                      <span className="truncate">{casting.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-neutral-300 min-w-0">
-                      <Globe className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
-                      <span className="truncate">{casting.languageRequirement}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-neutral-300 min-w-0">
-                      <Calendar className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
-                      <span className="truncate">Deadline: {casting.deadline}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-neutral-300 min-w-0 font-mono text-[11px]">
-                      <Users className="w-3.5 h-3.5 text-[#FFB800] shrink-0" />
-                      <span>{casting.applicationCount} Applied</span>
-                    </div>
-                  </div>
-
-                  {/* Clean Dedicated Compensation Row */}
-                  <div className="pt-2 border-t border-white/5 flex items-start gap-2.5 text-xs">
-                    <Banknote className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[10px] uppercase font-mono tracking-wider text-[#94A3B8] block font-semibold">
-                        Compensation
-                      </span>
-                      <span className="text-xs font-semibold text-emerald-400 leading-snug break-words">
-                        {casting.compensationAmount || casting.compensationType}
-                      </span>
-                    </div>
+                      <Clapperboard className="w-3.5 h-3.5 shrink-0" />
+                      <span>Apply for Role</span>
+                    </button>
                   </div>
                 </div>
-
-                {/* In-App Apply Call to action with non-collapsing pill button */}
-                <div className="flex items-center justify-between gap-3 pt-1">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-[#94A3B8] truncate">
-                      {casting.requirementsNote || 'Self-tapes accepted'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => onOpenApply(post)}
-                    className="shrink-0 whitespace-nowrap px-4 py-2 rounded-full bg-[#FF6B00] hover:bg-[#E05300] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95 shadow-md shadow-[#FF6B00]/20"
-                  >
-                    <Clapperboard className="w-3.5 h-3.5 shrink-0" />
-                    <span>Apply for Role</span>
-                  </button>
-                </div>
-              </div>
+              </article>
             );
           })
         )}
