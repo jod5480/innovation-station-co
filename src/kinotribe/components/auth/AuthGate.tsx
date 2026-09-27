@@ -3,11 +3,7 @@ import { Loader2, Info, EyeOff, HelpCircle, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
-interface AuthGateProps {
-  onGuestLogin?: () => void;
-}
-
-export const AuthGate: React.FC<AuthGateProps> = ({ onGuestLogin }) => {
+export const AuthGate: React.FC = () => {
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -212,15 +208,6 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onGuestLogin }) => {
                 Create new account
               </button>
               
-              {onGuestLogin && (
-                <button
-                  type="button"
-                  onClick={onGuestLogin}
-                  className="w-full text-[var(--theme-color)] text-sm font-semibold hover:underline text-center block mt-4"
-                >
-                  Explore as Guest
-                </button>
-              )}
             </div>
           )}
         </form>

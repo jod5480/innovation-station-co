@@ -126,12 +126,7 @@ export default function App() {
     };
   }, [session]);
 
-  const handleGuestLogin = () => {
-    localStorage.setItem("cinetribe_guest", "true");
-    setSession({ userId: api.GUEST_USER_ID });
-  };
-
-  if (session === null) return <AuthGate onGuestLogin={handleGuestLogin} />;
+  if (session === null) return <AuthGate />;
   if (!boot)
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-muted-foreground text-sm">
