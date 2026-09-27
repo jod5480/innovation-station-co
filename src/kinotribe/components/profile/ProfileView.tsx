@@ -1,11 +1,5 @@
-import React, { useState } from 'react';
-import {
-  User,
-  Post,
-  Application,
-  CinemaRole,
-  ExperienceLevel,
-} from '../../types';
+import React, { useState } from "react";
+import { User, Post, Application, CinemaRole, ExperienceLevel } from "../../types";
 import {
   CheckCircle2,
   Film,
@@ -25,35 +19,53 @@ import {
   Sun,
   Moon,
   X,
-  Grid3X3,
+  LayoutGrid,
+  MonitorPlay,
+  Contact,
+  BookOpen,
   UserCheck,
   Briefcase,
   Share2,
   Copy,
   Check,
-} from 'lucide-react';
-import { ALL_ROLES, COUNTRIES_DATA } from '../../data/mockCinemaData';
+  Camera,
+  Palette,
+} from "lucide-react";
+
+const THEMES = [
+  { name: "Crimson", color: "#DC143C", hover: "#A40F2D" },
+  { name: "Ocean", color: "#0095F6", hover: "#1877F2" },
+  { name: "Emerald", color: "#10B981", hover: "#059669" },
+  { name: "Amethyst", color: "#8B5CF6", hover: "#7C3AED" },
+  { name: "Amber", color: "#F59E0B", hover: "#D97706" }
+];
+import { ALL_ROLES, COUNTRIES_DATA } from "../../data/mockCinemaData";
 
 interface ProfileViewProps {
   user: User;
   currentUser: User;
   posts: Post[];
   myApplications: Application[];
+  receivedApplications?: Application[];
+  onUpdateApplicationStatus?: (
+    appId: string,
+    status: Application["status"],
+    applicantId?: string,
+    projectTitle?: string,
+  ) => void;
   isFollowing: boolean;
   onFollowToggle: (userId: string) => void;
   onOpenMessage: (user: User) => void;
   onPostClick: (post: Post) => void;
   onUpdateProfile: (updated: User) => void;
   onOpenApply: (post: Post) => void;
-  onOpenAuthModal?: (mode?: 'login' | 'signup') => void;
-  feedMode?: 'regional' | 'global' | 'custom';
+  onOpenAuthModal?: (mode?: "login" | "signup") => void;
+  feedMode?: "regional" | "global" | "custom";
   activeBrowseCountry?: string;
   activeBrowseLanguage?: string;
   onOpenRegionFilter?: () => void;
-  theatreMode?: boolean;
-  onToggleTheatreMode?: () => void;
-  activePalette?: 'now-playing' | 'neon-noir' | 'monsoon-blue';
-  onChangePalette?: (pal: 'now-playing' | 'neon-noir' | 'monsoon-blue') => void;
+  activePalette?: "now-playing" | "neon-noir" | "monsoon-blue";
+  onChangePalette?: (pal: "now-playing" | "neon-noir" | "monsoon-blue") => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -61,6 +73,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   currentUser,
   posts,
   myApplications,
+  receivedApplications = [],
+  onUpdateApplicationStatus,
   isFollowing,
   onFollowToggle,
   onOpenMessage,
@@ -68,50 +82,87 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onUpdateProfile,
   onOpenApply,
   onOpenAuthModal,
-  feedMode = 'regional',
+  feedMode = "regional",
   activeBrowseCountry,
   activeBrowseLanguage,
   onOpenRegionFilter,
-  theatreMode = true,
-  onToggleTheatreMode,
-  activePalette = 'now-playing',
+  activePalette = "now-playing",
   onChangePalette,
 }) => {
   const isMe = user.id === currentUser.id;
-  const [activeTab, setActiveTab] = useState<'posts' | 'showreels' | 'tagged' | 'portfolio' | 'saved'>('posts');
+  const [activeTab, setActiveTab] = useState<
+    "posts" | "showreels" | "tagged" | "portfolio" | "saved"
+  >("posts");
   const [isEditing, setIsEditing] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [portfolioCopied, setPortfolioCopied] = useState(false);
 
+  // Banner state
+  const [editBannerUrl, setEditBannerUrl] = useState(user.coverImage || "");
+  const [bannerPreview, setBannerPreview] = useState(user.coverImage || "");
+  const bannerInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setBannerPreview(objectUrl);
+    setEditBannerUrl(objectUrl);
+    // Immediately persist the banner so it shows on profile
+    onUpdateProfile({ ...user, coverImage: objectUrl });
+  };
+
+  const avatarInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    // Immediately persist the avatar so it shows on profile
+    onUpdateProfile({ ...user, avatar: objectUrl });
+  };
+
   // Edit state
   const [editName, setEditName] = useState(user.name);
+  const [editUsername, setEditUsername] = useState(user.username);
   const [editBio, setEditBio] = useState(user.bio);
+  const [editPronouns, setEditPronouns] = useState((user as any).pronouns || "");
+  const [editLink, setEditLink] = useState(user.portfolioUrl || user.imdbUrl || "");
+  const [editRegion, setEditRegion] = useState(user.country || "");
   const [editRoles, setEditRoles] = useState<CinemaRole[]>(user.roles);
+  const [editTheme, setEditTheme] = useState(() => localStorage.getItem("app_theme_color") || "#DC143C");
+
+  const applyTheme = (theme: typeof THEMES[0]) => {
+    setEditTheme(theme.color);
+    document.documentElement.style.setProperty("--theme-color", theme.color);
+    document.documentElement.style.setProperty("--theme-hover", theme.hover);
+    localStorage.setItem("app_theme_color", theme.color);
+    localStorage.setItem("app_theme_hover", theme.hover);
+  };
   const [editExperience, setEditExperience] = useState<ExperienceLevel>(user.experienceLevel);
-  const [editShowreel, setEditShowreel] = useState(user.showreelVideoUrl || '');
-  const [editImdb, setEditImdb] = useState(user.imdbUrl || '');
-  const [editPortfolio, setEditPortfolio] = useState(user.portfolioUrl || '');
+  const [editShowreel, setEditShowreel] = useState(user.showreelVideoUrl || "");
+  const [editImdb, setEditImdb] = useState(user.imdbUrl || "");
+  const [editPortfolio, setEditPortfolio] = useState(user.portfolioUrl || "");
 
   // User posts & categories
   const userPosts = posts.filter((p) => p.author.id === user.id);
-  const userCastingPosts = userPosts.filter((p) => p.type === 'casting');
+  const userCastingPosts = userPosts.filter((p) => p.type === "casting");
   const userShowreelPosts = userPosts.filter(
     (p) =>
-      p.content.mediaType === 'video' ||
-      p.type === 'video' ||
-      (p.content.cameraSpec && p.content.cameraSpec.toLowerCase().includes('reel'))
+      p.content.mediaType === "video" ||
+      p.type === "video" ||
+      (p.content.cameraSpec && p.content.cameraSpec.toLowerCase().includes("reel")),
   );
   const userPortfolioPosts = userPosts.filter(
     (p) =>
-      p.isPortfolio ||
-      (userPosts.length <= 4 && Boolean(p.content.mediaUrl) && p.type !== 'text')
+      p.isPortfolio || (userPosts.length <= 4 && Boolean(p.content.mediaUrl) && p.type !== "text"),
   );
   const taggedPosts = posts.filter(
     (p) =>
       p.author.id !== user.id &&
       (p.tags.some((t) => t.toLowerCase() === user.username.toLowerCase()) ||
         p.comments.some((c) => c.author.id === user.id) ||
-        p.content.text?.toLowerCase().includes(`@${user.username.toLowerCase()}`))
+        p.content.text?.toLowerCase().includes(`@${user.username.toLowerCase()}`)),
   );
   const savedPosts = posts.filter((p) => p.isSaved);
 
@@ -121,7 +172,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       navigator
         .share({
           title: `${user.name} — Cinema Portfolio`,
-          text: `Check out ${user.name}'s (${user.roles.join(', ')}) film portfolio and stills on Kinotribe.`,
+          text: `Check out ${user.name}'s (${user.roles.join(", ")}) film portfolio and stills on Kinotribe.`,
           url: portfolioShareUrl,
         })
         .then(() => {
@@ -151,6 +202,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       showreelVideoUrl: editShowreel,
       imdbUrl: editImdb,
       portfolioUrl: editPortfolio,
+      country: editRegion,
     };
     onUpdateProfile(updated);
     setIsEditing(false);
@@ -168,400 +220,262 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   return (
     <div className="w-full space-y-5 pb-20">
-      {/* Profile Header Card (Monsoon & Rice White Glass Surface) */}
-      <div className="rounded-[28px] bg-[#121826] border border-white/10 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-        {/* Cover / Showreel Header Banner */}
-        <div className="relative h-36 sm:h-48 w-full bg-[#0A0E17] overflow-hidden">
-          {user.coverImage ? (
+      {/* Hidden banner file input */}
+      <input
+        ref={bannerInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleBannerFileChange}
+      />
+
+      {/* Profile Header with Banner */}
+      <div className="rounded-[28px] apple-glass-card border border-white/14 overflow-hidden shadow-2xl pb-4 space-y-3">
+        {/* ── Banner strip ── */}
+        <div className="relative w-full h-28 bg-gradient-to-br from-[#1a0a2e] via-[#2d0a4e] to-[#0a0a1a] overflow-hidden">
+          {bannerPreview || user.coverImage ? (
             <img
-              src={user.coverImage}
-              alt="Cover"
-              className="w-full h-full object-cover opacity-60"
+              src={bannerPreview || user.coverImage}
+              alt="Profile banner"
+              className="w-full h-full object-cover pointer-events-none select-none"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 flex items-center justify-center">
-              <span className="font-mono text-xs text-[#FFB800]/40 tracking-widest uppercase">
-                35MM ANAMORPHIC SHOWREEL
-              </span>
+            /* Cinematic default banner gradient */
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1a0033] via-[#3b0082] to-[#0d1117] pointer-events-none">
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(131,58,180,0.15) 20px, rgba(131,58,180,0.15) 21px)",
+                }}
+              />
+              <div className="absolute bottom-3 left-4 flex items-center gap-2 opacity-40">
+                <Film className="w-4 h-4 text-[var(--theme-color)]" />
+                <span className="text-[11px] font-mono text-[var(--theme-color)] tracking-widest uppercase">
+                  Your Banner
+                </span>
+              </div>
             </div>
           )}
-          {user.showreelVideoUrl && (
-            <a
-              href={user.showreelVideoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 text-xs font-semibold text-[#FFB800] flex items-center gap-1.5 hover:bg-black active:scale-95 transition-all"
+
+          {/* Small edit button pinned to bottom-right (owner only) */}
+          {isMe && (
+            <button
+              onClick={() => bannerInputRef.current?.click()}
+              title="Change banner photo"
+              className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-background/60 backdrop-blur-md border border-border text-foreground hover:bg-background/80 active:scale-95 transition-all duration-150 shadow-lg z-10"
             >
-              <Play className="w-3 h-3 fill-[#FFB800]" /> Watch Showreel
-            </a>
+              <Camera className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-[11px] font-semibold leading-none">Edit</span>
+            </button>
           )}
         </div>
 
-        {/* Profile Details Container */}
-        <div className="px-5 pt-0 pb-5">
-          {/* Avatar and Action Buttons row */}
-          <div className="flex items-end justify-between -mt-12 mb-3">
-            <div className="relative">
+        {/* Remaining header content with horizontal padding */}
+        <div className="px-4 pt-1 space-y-3">
+          {/* Row 1: Avatar (left) + Stats (right) — exactly like Instagram */}
+          <div className="flex items-center gap-4">
+            {/* Avatar */}
+            <div className="relative shrink-0">
               <img
                 src={user.avatar}
                 alt={user.name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-[#121826] shadow-2xl bg-black"
+                className="w-20 h-20 rounded-full object-cover border-[2.5px] border-border shadow-xl bg-background"
               />
               {user.isVerified && (
                 <div
-                  className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-[#FFB800] text-black flex items-center justify-center border-2 border-[#121826] font-bold shadow-sm"
+                  className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full bg-white text-black flex items-center justify-center border-2 border-[#121212] font-bold shadow-sm"
                   title="Verified Cinema Professional"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <CheckCircle2 className="w-3 h-3" />
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              {isMe ? (
-                <>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/15 text-neutral-200 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 border border-white/10"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" /> Edit Profile
-                  </button>
-                  <button
-                    onClick={() => setIsSettingsModalOpen(true)}
-                    className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/15 text-neutral-200 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 border border-white/10"
-                    title="Profile & App Settings"
-                  >
-                    <Settings className="w-3.5 h-3.5 text-[#FFB800]" />
-                    <span>Settings</span>
-                  </button>
-                  {onOpenAuthModal && (
-                    <button
-                      onClick={() => onOpenAuthModal('signup')}
-                      className="px-4 py-2 rounded-full bg-[#FF6B00]/15 border border-[#FF6B00]/30 hover:bg-[#FF6B00]/25 text-[#FF6B00] text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
-                      title="Create a new film account or sign up with OTP"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" /> + New Account
-                    </button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => onFollowToggle(user.id)}
-                    className={`px-5 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${
-                      isFollowing
-                        ? 'bg-white/10 text-neutral-300 hover:bg-white/15'
-                        : 'bg-[#FF6B00] hover:bg-[#E05300] text-white font-bold shadow-md shadow-[#FF6B00]/20'
-                    }`}
-                  >
-                    {isFollowing ? 'Following' : 'Follow'}
-                  </button>
-                  <button
-                    onClick={() => onOpenMessage(user)}
-                    className="p-2.5 rounded-full bg-white/10 hover:bg-white/15 text-neutral-200 transition-all active:scale-95 border border-white/10"
-                    title="Direct Message"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Name & Handle */}
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold font-brand text-white tracking-tight">
-                {user.name}
-              </h1>
-              <span className="text-xs text-[#94A3B8]">@{user.username}</span>
-            </div>
-
-            {/* Quiet metadata: Experience level · Location · Languages */}
-            <div className="flex items-center gap-2 text-xs text-[#94A3B8] mt-1 flex-wrap">
-              <span className="text-[#FFB800] font-medium">
-                {user.experienceLevel} Tier
-              </span>
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-neutral-500" />
-                {user.country}
-              </span>
-              <span>·</span>
-              <span>{user.languages.join(', ')}</span>
-            </div>
-          </div>
-
-          {/* Cinema Roles List */}
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {user.roles.map((role) => (
-              <span
-                key={role}
-                className="px-2.5 py-1 rounded-lg bg-black/60 border border-white/10 text-neutral-200 text-xs font-medium"
-              >
-                {role}
-              </span>
-            ))}
-          </div>
-
-          {/* Bio statement */}
-          <p className="text-xs text-neutral-300 mt-3 leading-relaxed max-w-xl">
-            {user.bio}
-          </p>
-
-          {/* External Links: IMDb, Portfolio, Vimeo */}
-          <div className="flex items-center gap-4 text-xs text-neutral-400 mt-3 flex-wrap">
-            {user.imdbUrl && (
-              <a
-                href={user.imdbUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-[#FFB800] flex items-center gap-1 transition-colors"
-              >
-                <span className="font-bold text-[#FFB800] text-[10px] bg-[#FFB800]/10 px-1 py-0.5 rounded border border-[#FFB800]/20">
-                  IMDb
+            {/* Stats — posts / followers / following */}
+            <div className="flex flex-1 items-center justify-around text-center">
+              <div>
+                <span className="block text-[17px] font-bold text-foreground font-brand">
+                  {userPosts.length}
                 </span>
-                Profile
-              </a>
-            )}
-            {user.portfolioUrl && (
-              <a
-                href={user.portfolioUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-white flex items-center gap-1 transition-colors"
-              >
-                <Globe className="w-3.5 h-3.5 text-neutral-500" />
-                Website
-              </a>
-            )}
-            {user.showreelVideoUrl && (
-              <a
-                href={user.showreelVideoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-white flex items-center gap-1 transition-colors"
-              >
-                <Video className="w-3.5 h-3.5 text-neutral-500" />
-                Showreel
-              </a>
-            )}
-          </div>
-
-          {/* Metrics Row (Followers, Following, Cuts) */}
-          <div className="flex items-center gap-6 pt-4 mt-4 border-t border-white/10 text-xs text-[#94A3B8]">
-            <div>
-              <strong className="text-white font-mono text-sm block">
-                {userPosts.length}
-              </strong>
-              <span>Film Cuts</span>
-            </div>
-            <div>
-              <strong className="text-white font-mono text-sm block">
-                {user.followersCount}
-              </strong>
-              <span>Followers</span>
-            </div>
-            <div>
-              <strong className="text-white font-mono text-sm block">
-                {user.followingCount}
-              </strong>
-              <span>Following</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Profile Settings: Appearance Theme & Cinema Feed Region */}
-      {isMe && (
-        <div className="p-4 rounded-2xl bg-[#121826] border border-white/10 space-y-3 shadow-md">
-          <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 flex items-center justify-center text-[#FFB800]">
-                <Settings className="w-3.5 h-3.5" />
+                <span className="text-[12px] text-muted-foreground">posts</span>
               </div>
-              <span className="text-xs font-bold text-neutral-200 font-brand uppercase tracking-wider">
-                Profile & Studio Settings
-              </span>
+              <div>
+                <span className="block text-[17px] font-bold text-foreground font-brand">
+                  {user.followersCount}
+                </span>
+                <span className="text-[12px] text-muted-foreground">followers</span>
+              </div>
+              <div>
+                <span className="block text-[17px] font-bold text-foreground font-brand">
+                  {user.followingCount}
+                </span>
+                <span className="text-[12px] text-muted-foreground">following</span>
+              </div>
             </div>
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="text-xs text-[#FF6B00] hover:text-[#E05300] font-medium flex items-center gap-1 transition-colors"
-            >
-              <span>More Settings</span>
-              <SlidersHorizontal className="w-3 h-3" />
-            </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {/* Theme Setting Item */}
-            <div className="p-3 bg-black/60 border border-white/5 rounded-xl flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-[#121826] border border-white/10 flex items-center justify-center text-[#FF6B00] shrink-0">
-                  {theatreMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                    <span>Theme</span>
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-white/10 text-white font-semibold">
-                      {theatreMode ? 'Cinema Dark' : 'Light Mode'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#94A3B8] truncate">
-                    {theatreMode ? 'Pure TikTok black #0A0E17' : 'Studio daylight paper tone'}
-                  </p>
-                </div>
-              </div>
+          {/* Row 2: Name, roles, bio, link */}
+          <div className="space-y-0.5">
+            {/* Display name */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[14px] font-bold text-foreground">{user.name}</span>
+              {user.isVerified && <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />}
+            </div>
 
-              {onToggleTheatreMode && (
-                <button
-                  type="button"
-                  onClick={onToggleTheatreMode}
-                  className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-neutral-200 text-xs font-semibold flex items-center gap-1 transition-all shrink-0 border border-white/10"
-                  title={theatreMode ? 'Switch to Light Mode' : 'Switch to Dark Cinema Mode'}
-                >
-                  {theatreMode ? (
-                    <>
-                      <Sun className="w-3 h-3 text-[#FFB800]" />
-                      <span>Light</span>
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="w-3 h-3 text-[#FF6B00]" />
-                      <span>Dark</span>
-                    </>
-                  )}
-                </button>
+            {/* Role badge */}
+            <div className="text-[12px] text-white font-medium">
+              {user.roles[0] || "Filmmaker"}
+              {user.roles.length > 1 ? ` · ${user.roles[1]}` : ""}
+            </div>
+
+            {/* Bio */}
+            {user.bio && (
+              <p className="text-[13px] text-neutral-300 leading-snug pt-0.5">{user.bio}</p>
+            )}
+
+            {/* Location + languages */}
+            <div className="flex items-center gap-1.5 text-[12px] text-neutral-500 pt-0.5">
+              <MapPin className="w-3 h-3 shrink-0" />
+              <span>{user.country}</span>
+              {user.languages.length > 0 && (
+                <>
+                  <span>·</span>
+                  <span>{user.languages[0]}</span>
+                </>
               )}
             </div>
 
-            {/* Region Setting Item */}
-            {onOpenRegionFilter && (
-              <div className="p-3 bg-black/60 border border-white/5 rounded-xl flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-[#121826] border border-white/10 flex items-center justify-center text-[#FFB800] shrink-0">
-                    <Globe className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-neutral-200 flex items-center gap-1.5">
-                      <span>Feed Region</span>
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-white/10 text-[#FFB800] font-semibold truncate">
-                        {feedMode === 'global' ? 'Global' : feedMode === 'regional' ? user.country : activeBrowseCountry || user.country}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#94A3B8] truncate">
-                      {feedMode === 'global' ? 'Worldwide cinema stream' : `Localized to ${user.country}`}
-                    </p>
-                  </div>
-                </div>
+            {/* Link */}
+            {(user.portfolioUrl || user.imdbUrl || user.showreelVideoUrl) && (
+              <a
+                href={user.portfolioUrl || user.imdbUrl || user.showreelVideoUrl || "#"}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1 text-[13px] text-[var(--theme-color)] font-medium hover:underline pt-0.5"
+              >
+                <ExternalLink className="w-3 h-3 shrink-0" />
+                <span className="truncate max-w-[200px]">
+                  {(user.portfolioUrl || user.imdbUrl || user.showreelVideoUrl || "").replace(
+                    /^https?:\/\//,
+                    "",
+                  )}
+                </span>
+              </a>
+            )}
+          </div>
 
+          {/* Row 3: Action buttons — Edit profile style for own profile, Follow/Message for others */}
+          {isMe ? (
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="flex-1 py-[7px] rounded-lg border border-border bg-black/[0.06] hover:bg-black/[0.10] text-foreground text-[13px] font-semibold text-center transition-all active:scale-[0.97]"
+              >
+                Edit profile
+              </button>
+
+              {onOpenRegionFilter && (
                 <button
                   type="button"
                   onClick={onOpenRegionFilter}
-                  className="px-3 py-1.5 rounded-lg bg-[#FF6B00] hover:bg-[#E05300] text-white text-xs font-bold flex items-center gap-1 transition-all shrink-0 shadow-sm"
-                  title="Configure Cinema Feed Country & Language"
+                  title="Configure Feed Region"
+                  className="w-9 h-9 rounded-lg border border-border bg-black/[0.06] hover:bg-black/[0.10] flex items-center justify-center text-foreground transition-all active:scale-90 shrink-0"
                 >
-                  <SlidersHorizontal className="w-3 h-3" />
-                  <span>Change</span>
+                  <Globe className="w-4 h-4 text-muted-foreground" />
                 </button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={() => onFollowToggle(user.id)}
+                className={`flex-1 py-[7px] rounded-lg text-[13px] font-bold text-center transition-all active:scale-[0.97] ${
+                  isFollowing
+                    ? "border border-border bg-black/[0.06] hover:bg-black/[0.10] text-foreground"
+                    : "bg-[var(--theme-color)] hover:bg-[var(--theme-hover)] text-foreground shadow-sm shadow-[var(--theme-color)]/25"
+                }`}
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </button>
+              <button
+                onClick={() => onOpenMessage(user)}
+                className="flex-1 py-[7px] rounded-lg border border-border bg-black/[0.06] hover:bg-black/[0.10] text-foreground text-[13px] font-semibold text-center transition-all active:scale-[0.97]"
+              >
+                Message
+              </button>
+            </div>
+          )}
         </div>
-      )}
+        {/* end padded content */}
+      </div>
 
-      {/* Profile Tabs (Modern Icons Without Texts: Posts, Showreels, Tagged, Portfolio) */}
-      <div className="flex items-center justify-around border border-white/10 bg-[#121826]/95 backdrop-blur-md rounded-2xl p-1.5 shadow-inner gap-1.5">
+      {/* Profile Tabs */}
+      <div className="flex items-center border border-border bg-muted/50 rounded-2xl p-1 shadow-xl gap-1">
         {/* Posts */}
         <button
-          onClick={() => setActiveTab('posts')}
+          onClick={() => setActiveTab("posts")}
           title={`Posts (${userPosts.length})`}
           aria-label="Posts"
-          className={`flex-1 py-3 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 relative ${
-            activeTab === 'posts'
-              ? 'bg-[#FF6B00] text-white font-bold shadow-lg shadow-[#FF6B00]/30'
-              : 'text-[#94A3B8] hover:text-white hover:bg-white/5'
+          className={`relative flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all duration-200 ${
+            activeTab === "posts"
+              ? "bg-black/15 text-foreground shadow-sm"
+              : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
-          <Grid3X3 className="w-5 h-5 stroke-[2.2]" />
-          {userPosts.length > 0 && activeTab !== 'posts' && (
-            <span className="absolute top-2 right-2.5 w-1.5 h-1.5 rounded-full bg-[#FF6B00]" />
-          )}
+          <LayoutGrid className="w-5 h-5" strokeWidth={activeTab === "posts" ? 2 : 1.5} />
         </button>
 
         {/* Showreels */}
         <button
-          onClick={() => setActiveTab('showreels')}
-          title="Showreels & Cinema Reels"
-          aria-label="Showreels"
-          className={`flex-1 py-3 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 relative ${
-            activeTab === 'showreels'
-              ? 'bg-[#FF6B00] text-white font-bold shadow-lg shadow-[#FF6B00]/30'
-              : 'text-[#94A3B8] hover:text-white hover:bg-white/5'
+          onClick={() => setActiveTab("showreels")}
+          title="Casting Calls"
+          aria-label="Casting Calls"
+          className={`relative flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all duration-200 ${
+            activeTab === "showreels"
+              ? "bg-black/15 text-foreground shadow-sm"
+              : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
-          <Film className="w-5 h-5 stroke-[2.2]" />
-          {(userShowreelPosts.length > 0 || user.showreelVideoUrl) && activeTab !== 'showreels' && (
-            <span className="absolute top-2 right-2.5 w-1.5 h-1.5 rounded-full bg-[#FFB800]" />
-          )}
+          <Clapperboard className="w-5 h-5" strokeWidth={activeTab === "showreels" ? 2 : 1.5} />
         </button>
 
         {/* Tagged */}
         <button
-          onClick={() => setActiveTab('tagged')}
-          title="Tagged Credits"
+          onClick={() => setActiveTab("tagged")}
+          title="Tagged"
           aria-label="Tagged"
-          className={`flex-1 py-3 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 relative ${
-            activeTab === 'tagged'
-              ? 'bg-[#FF6B00] text-white font-bold shadow-lg shadow-[#FF6B00]/30'
-              : 'text-[#94A3B8] hover:text-white hover:bg-white/5'
+          className={`relative flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all duration-200 ${
+            activeTab === "tagged"
+              ? "bg-black/15 text-foreground shadow-sm"
+              : "text-neutral-500 hover:text-neutral-300"
           }`}
         >
-          <UserCheck className="w-5 h-5 stroke-[2.2]" />
-          {taggedPosts.length > 0 && activeTab !== 'tagged' && (
-            <span className="absolute top-2 right-2.5 w-1.5 h-1.5 rounded-full bg-[#FFB800]" />
-          )}
-        </button>
-
-        {/* Portfolio */}
-        <button
-          onClick={() => setActiveTab('portfolio')}
-          title={`Curated Portfolio (${userPortfolioPosts.length})`}
-          aria-label="Portfolio"
-          className={`flex-1 py-3 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 relative ${
-            activeTab === 'portfolio'
-              ? 'bg-[#FF6B00] text-white font-bold shadow-lg shadow-[#FF6B00]/30'
-              : 'text-[#94A3B8] hover:text-white hover:bg-white/5'
-          }`}
-        >
-          <Briefcase className="w-5 h-5 stroke-[2.2]" />
-          {userPortfolioPosts.length > 0 && activeTab !== 'portfolio' && (
-            <span className="absolute top-2 right-2.5 w-1.5 h-1.5 rounded-full bg-[#FFB800]" />
-          )}
+          <Contact className="w-5 h-5" strokeWidth={activeTab === "tagged" ? 2 : 1.5} />
         </button>
 
         {/* Saved (only for account owner) */}
         {isMe && (
           <button
-            onClick={() => setActiveTab('saved')}
-            title={`Saved (${savedPosts.length})`}
+            onClick={() => setActiveTab("saved")}
+            title="Saved"
             aria-label="Saved"
-            className={`flex-1 py-3 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 relative ${
-              activeTab === 'saved'
-                ? 'bg-[#FF6B00] text-white font-bold shadow-lg shadow-[#FF6B00]/30'
-                : 'text-[#94A3B8] hover:text-white hover:bg-white/5'
+            className={`relative flex-1 py-2.5 rounded-xl flex items-center justify-center transition-all duration-200 ${
+              activeTab === "saved"
+                ? "bg-black/15 text-foreground shadow-sm"
+                : "text-neutral-500 hover:text-neutral-300"
             }`}
           >
-            <Bookmark className="w-5 h-5 stroke-[2.2]" />
+            <Bookmark className="w-5 h-5" strokeWidth={activeTab === "saved" ? 2 : 1.5} />
           </button>
         )}
       </div>
 
       {/* TAB CONTENT: POSTS */}
-      {activeTab === 'posts' && (
-        <div className="space-y-3">
+      {activeTab === "posts" && (
+        <div key="profile-posts" className="space-y-3 apple-page-enter">
           {userPosts.length === 0 ? (
-            <div className="p-8 text-center bg-neutral-900/60 rounded-2xl border border-neutral-800 text-neutral-500 text-xs">
+            <div className="p-8 text-center bg-secondary/60 rounded-2xl border border-neutral-800 text-neutral-500 text-xs">
               No cinema posts yet.
             </div>
           ) : (
@@ -575,7 +489,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   {post.content.mediaUrl ? (
                     <img
                       src={post.content.mediaUrl}
-                      alt={post.content.title || 'Post'}
+                      alt={post.content.title || "Post"}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                   ) : (
@@ -583,13 +497,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       {post.content.text}
                     </div>
                   )}
-                  {post.type === 'casting' && (
-                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[#FF6B00] text-white text-[9px] font-bold font-bold shadow-sm">
+                  {post.type === "casting" && (
+                    <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[var(--theme-color)] text-foreground text-[9px] font-bold font-bold shadow-sm">
                       CASTING
                     </span>
                   )}
                   {post.isPortfolio && (
-                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-[#FFB800]/90 text-black text-[9px] font-mono font-bold shadow-sm">
+                    <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/90 text-black text-[9px] font-mono font-bold shadow-sm">
                       PORTFOLIO
                     </span>
                   )}
@@ -600,101 +514,56 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       )}
 
-      {/* TAB CONTENT: SHOWREELS */}
-      {activeTab === 'showreels' && (
-        <div className="space-y-4">
-          {/* Main Showreel Featured Player if URL exists */}
-          {user.showreelVideoUrl ? (
-            <div className="p-4 rounded-2xl bg-[#121826] border border-white/10 space-y-3 shadow-md">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Film className="w-4 h-4 text-[#FFB800]" />
-                  <span className="font-brand font-bold text-sm text-white">
-                    Primary Cinema Showreel
-                  </span>
-                </div>
-                <a
-                  href={user.showreelVideoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-1 rounded-full bg-[#FFB800]/15 border border-[#FFB800]/30 text-[#FFB800] text-xs font-semibold hover:bg-[#FFB800]/25 transition-colors flex items-center gap-1"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  <span>External Reel</span>
-                </a>
-              </div>
-
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/10 group">
-                <img
-                  src={userPosts[0]?.content.mediaUrl || user.avatar}
-                  alt="Showreel Preview"
-                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <a
-                    href={user.showreelVideoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-14 h-14 rounded-full bg-[#FF6B00] text-white flex items-center justify-center shadow-lg shadow-[#FF6B00]/40 hover:scale-110 active:scale-95 transition-all"
-                  >
-                    <Play className="w-6 h-6 fill-white ml-0.5" />
-                  </a>
-                </div>
-                <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg bg-black/80 text-white text-xs font-mono">
-                  {user.name} · Directing & Cinematography Reel
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Video Clips / Reels Grid */}
-          {userShowreelPosts.length > 0 ? (
+      {/* TAB CONTENT: CASTING */}
+      {activeTab === "showreels" && (
+        <div key="profile-casting" className="space-y-4 apple-page-enter">
+          {userCastingPosts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {userShowreelPosts.map((post) => (
+              {userCastingPosts.map((post) => (
                 <button
                   key={post.id}
                   onClick={() => onPostClick(post)}
-                  className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950 border border-white/10 group"
+                  className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950 border border-neutral-800/80 group"
                 >
-                  {post.content.mediaUrl && (
+                  {post.content.mediaUrl ? (
                     <img
                       src={post.content.mediaUrl}
-                      alt={post.content.title || 'Video Reel'}
+                      alt={post.content.title || "Casting Post"}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
-                  )}
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                    <div className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md text-white flex items-center justify-center">
-                      <Play className="w-4 h-4 fill-white ml-0.5" />
+                  ) : (
+                    <div className="p-3 text-left font-mono text-[10px] text-neutral-300">
+                      {post.content.text}
                     </div>
-                  </div>
-                  <div className="absolute bottom-2 left-2 right-2 truncate text-[10px] text-white bg-black/70 px-1.5 py-0.5 rounded">
-                    {post.content.title || 'Video Reel'}
-                  </div>
+                  )}
+                  <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[var(--theme-color)] text-foreground text-[9px] font-bold shadow-sm">
+                    CASTING
+                  </span>
                 </button>
               ))}
             </div>
-          ) : !user.showreelVideoUrl ? (
-            <div className="p-8 text-center bg-[#121826] rounded-2xl border border-white/10 text-neutral-400 space-y-2">
-              <Film className="w-8 h-8 text-neutral-500 mx-auto" />
-              <h4 className="font-bold text-white text-sm">No showreels uploaded</h4>
-              <p className="text-xs text-[#94A3B8]">
-                Post cinema video cuts or link a showreel URL in profile settings.
+          ) : (
+            <div className="p-8 text-center bg-[#121212] rounded-2xl border border-border text-muted-foreground space-y-2">
+              <Clapperboard className="w-8 h-8 text-neutral-500 mx-auto" />
+              <h4 className="font-bold text-foreground text-sm">No casting posts</h4>
+              <p className="text-xs text-muted-foreground">
+                Post a casting call to find talent for your next film.
               </p>
             </div>
-          ) : null}
+          )}
         </div>
       )}
 
       {/* TAB CONTENT: TAGGED */}
-      {activeTab === 'tagged' && (
-        <div className="space-y-4">
+      {activeTab === "tagged" && (
+        <div key="profile-tagged" className="space-y-4 apple-page-enter">
           {taggedPosts.length === 0 ? (
-            <div className="p-8 text-center bg-[#121826] rounded-2xl border border-white/10 text-neutral-400 space-y-2">
+            <div className="p-8 text-center bg-[#121212] rounded-2xl border border-border text-muted-foreground space-y-2">
               <UserCheck className="w-8 h-8 text-neutral-500 mx-auto" />
-              <h4 className="font-bold text-white text-sm">No tagged film credits</h4>
-              <p className="text-xs text-[#94A3B8]">
-                When other directors or cinematographers tag {user.name} in their films, those projects will appear here.
+              <h4 className="font-bold text-foreground text-sm">No tagged film credits</h4>
+              <p className="text-xs text-muted-foreground">
+                When other directors or cinematographers tag {user.name} in their films, those
+                projects will appear here.
               </p>
             </div>
           ) : (
@@ -703,19 +572,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <button
                   key={post.id}
                   onClick={() => onPostClick(post)}
-                  className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950 border border-white/10 group"
+                  className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950 border border-border group"
                 >
                   {post.content.mediaUrl && (
                     <img
                       src={post.content.mediaUrl}
-                      alt={post.content.title || 'Tagged Post'}
+                      alt={post.content.title || "Tagged Post"}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                   )}
-                  <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/80 text-[#FFB800] text-[10px] truncate max-w-[85%] font-medium">
+                  <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-background/80 text-white text-[10px] truncate max-w-[85%] font-medium">
                     @{post.author.username}
                   </span>
-                  <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-[#FF6B00] text-white text-[9px] font-bold font-bold">
+                  <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-[var(--theme-color)] text-foreground text-[9px] font-bold font-bold">
                     CREDIT
                   </span>
                 </button>
@@ -725,144 +594,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       )}
 
-      {/* TAB CONTENT: PORTFOLIO (Curated Showcase & Share Portfolio) */}
-      {activeTab === 'portfolio' && (
-        <div className="space-y-4">
-          {/* Portfolio Header Bar with Share Portfolio Button */}
-          <div className="p-4 rounded-2xl bg-[#121826] border border-white/10 flex items-center justify-between gap-3 shadow-md">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#FFB800]/10 border border-[#FFB800]/30 flex items-center justify-center text-[#FFB800] shrink-0">
-                <Briefcase className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-brand font-bold text-sm text-white tracking-tight">
-                    {user.name}’s Cinema Portfolio
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full bg-[#FFB800]/10 text-[#FFB800] font-mono text-[10px] font-semibold border border-[#FFB800]/20">
-                    {userPortfolioPosts.length} {userPortfolioPosts.length === 1 ? 'Work' : 'Works'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                  Curated film stills, cinematography grades, and directing work.
-                </p>
-              </div>
-            </div>
-
-            {/* Share Portfolio Button */}
-            <button
-              onClick={handleSharePortfolio}
-              className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shrink-0 ${
-                portfolioCopied
-                  ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25'
-                  : 'bg-[#FF6B00] hover:bg-[#E05300] text-white font-bold shadow-md shadow-[#FF6B00]/25'
-              }`}
-              title="Share portfolio link with producers & directors"
-            >
-              {portfolioCopied ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Link Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>Share Portfolio</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Portfolio Showcase Grid */}
-          {userPortfolioPosts.length === 0 ? (
-            <div className="p-8 text-center bg-[#121826] rounded-2xl border border-white/10 text-neutral-400 space-y-3">
-              <div className="w-12 h-12 rounded-full bg-white/5 mx-auto flex items-center justify-center text-neutral-400">
-                <Briefcase className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-bold text-white text-sm">Portfolio is empty</h4>
-                <p className="text-xs text-[#94A3B8] max-w-sm mx-auto mt-1">
-                  When creating posts, toggle <strong className="text-[#FFB800]">"Add to Portfolio"</strong> to curate your film stills and showcase your work to producers and directors.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {userPortfolioPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="rounded-2xl overflow-hidden bg-[#121826] border border-white/10 group flex flex-col hover:border-[#FFB800]/50 transition-all shadow-md"
-                >
-                  {/* Media Still */}
-                  <div
-                    onClick={() => onPostClick(post)}
-                    className="relative aspect-video sm:aspect-[16/10] bg-black cursor-pointer overflow-hidden"
-                  >
-                    {post.content.mediaUrl ? (
-                      <img
-                        src={post.content.mediaUrl}
-                        alt={post.content.title || 'Film still'}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="p-4 font-mono text-xs text-neutral-300 h-full flex items-center bg-black/60">
-                        {post.content.text}
-                      </div>
-                    )}
-
-                    {/* Camera Spec Tag */}
-                    {post.content.cameraSpec && (
-                      <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-[10px] text-white font-mono flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#FFB800]" />
-                        <span className="truncate max-w-[180px]">{post.content.cameraSpec}</span>
-                      </div>
-                    )}
-
-                    {/* Credited Role Badge */}
-                    <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-[#FF6B00] text-white font-bold text-[10px] tracking-wide shadow-sm">
-                      {post.portfolioRole || user.roles[0] || 'Film Still'}
-                    </div>
-
-                    {/* Likes & Comments Count Pill */}
-                    <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-black/75 backdrop-blur-md text-white text-[10px] font-mono flex items-center gap-2">
-                      <span>❤️ {post.likes}</span>
-                      <span>💬 {post.commentsCount}</span>
-                    </div>
-                  </div>
-
-                  {/* Portfolio Details Footer */}
-                  <div className="p-3 flex items-center justify-between gap-2 border-t border-white/5 bg-[#0A0E17]/40">
-                    <div className="min-w-0">
-                      <h4
-                        onClick={() => onPostClick(post)}
-                        className="font-brand font-bold text-xs text-white truncate cursor-pointer hover:text-[#FFB800]"
-                      >
-                        {post.content.title || post.castingDetails?.projectTitle || 'Untitled Cinema Work'}
-                      </h4>
-                      <p className="text-[11px] text-[#94A3B8] truncate mt-0.5">
-                        {post.content.text || 'Featured cinema lookbook entry'}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={() => onPostClick(post)}
-                      className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-neutral-200 text-[11px] font-semibold transition-colors shrink-0"
-                    >
-                      View
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* TAB CONTENT: SAVED */}
-      {isMe && activeTab === 'saved' && (
-        <div className="space-y-3">
+      {isMe && activeTab === "saved" && (
+        <div key="profile-saved" className="space-y-3 apple-page-enter">
           {savedPosts.length === 0 ? (
-            <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/10 text-neutral-500 text-xs">
+            <div className="p-8 text-center bg-muted/50 rounded-2xl border border-border text-neutral-500 text-xs">
               No saved posts or casting calls in your bag.
             </div>
           ) : (
@@ -871,16 +607,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <button
                   key={post.id}
                   onClick={() => onPostClick(post)}
-                  className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950 border border-white/10 group"
+                  className="relative aspect-square rounded-xl overflow-hidden bg-neutral-950 border border-border group"
                 >
                   {post.content.mediaUrl && (
                     <img
                       src={post.content.mediaUrl}
-                      alt={post.content.title || 'Saved'}
+                      alt={post.content.title || "Saved"}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                   )}
-                  <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/80 text-[#FFB800] text-[10px] truncate max-w-[80%]">
+                  <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-background/80 text-white text-[10px] truncate max-w-[80%]">
                     @{post.author.username}
                   </span>
                 </button>
@@ -892,11 +628,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
       {/* EDIT PROFILE MODAL */}
       {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md bg-[#121826] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-brand font-bold text-lg text-neutral-100">
-              Edit Film Profile
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/60 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md apple-glass-card border border-border rounded-[32px] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto apple-modal-enter">
+            <h3 className="font-brand font-bold text-lg text-neutral-100">Edit Film Profile</h3>
 
             <div>
               <label className="block text-xs font-medium text-neutral-300 mb-1">
@@ -906,7 +640,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:border-[#FF6B00]"
+                className="w-full px-3 py-2 bg-background/50 border border-border rounded-xl text-xs text-neutral-100 focus:border-[var(--theme-color)]"
               />
             </div>
 
@@ -918,7 +652,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 rows={3}
                 value={editBio}
                 onChange={(e) => setEditBio(e.target.value)}
-                className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:border-[#FF6B00]"
+                className="w-full px-3 py-2 bg-background/50 border border-border rounded-xl text-xs text-neutral-100 focus:border-[var(--theme-color)]"
               />
             </div>
 
@@ -926,7 +660,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <label className="block text-xs font-medium text-neutral-300 mb-1.5">
                 Roles (Multi-select)
               </label>
-              <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto p-1 bg-black/50 rounded-xl border border-white/10">
+              <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto p-1 bg-background/50 rounded-xl border border-border">
                 {ALL_ROLES.map((r) => {
                   const active = editRoles.includes(r);
                   return (
@@ -936,8 +670,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                       onClick={() => handleRoleToggle(r)}
                       className={`p-1.5 rounded-lg text-[11px] text-left truncate transition-colors ${
                         active
-                          ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/40 font-bold'
-                          : 'bg-white/5 text-[#94A3B8] hover:text-white'
+                          ? "bg-[var(--theme-color)]/20 text-[var(--theme-color)] border border-[var(--theme-color)]/40 font-bold"
+                          : "bg-muted/50 text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {r}
@@ -955,48 +689,44 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 type="url"
                 value={editShowreel}
                 onChange={(e) => setEditShowreel(e.target.value)}
-                className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:border-[#FF6B00]"
+                className="w-full px-3 py-2 bg-background/50 border border-border rounded-xl text-xs text-neutral-100 focus:border-[var(--theme-color)]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1">
-                  IMDb Link
-                </label>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">IMDb Link</label>
                 <input
                   type="url"
                   value={editImdb}
                   onChange={(e) => setEditImdb(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:border-[#FF6B00]"
+                  className="w-full px-3 py-2 bg-background/50 border border-border rounded-xl text-xs text-neutral-100 focus:border-[var(--theme-color)]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1">
-                  Portfolio
-                </label>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">Portfolio</label>
                 <input
                   type="url"
                   value={editPortfolio}
                   onChange={(e) => setEditPortfolio(e.target.value)}
-                  className="w-full px-3 py-2 bg-black/50 border border-white/10 rounded-xl text-xs text-neutral-100 focus:border-[#FF6B00]"
+                  className="w-full px-3 py-2 bg-background/50 border border-border rounded-xl text-xs text-neutral-100 focus:border-[var(--theme-color)]"
                 />
               </div>
             </div>
 
             {/* Feed Region Setting in Edit Profile Modal */}
             {onOpenRegionFilter && (
-              <div className="p-3 bg-black/50 rounded-xl border border-white/10 flex items-center justify-between">
+              <div className="p-3 bg-background/50 rounded-xl border border-border flex items-center justify-between">
                 <div>
                   <span className="block text-xs font-bold text-neutral-200">
                     Cinema Feed Discovery Region
                   </span>
-                  <span className="text-[11px] text-[#94A3B8]">
-                    {feedMode === 'global'
-                      ? 'Global Feed (All Countries)'
-                      : feedMode === 'regional'
-                      ? `My Region (${user.country})`
-                      : `Custom Filter (${activeBrowseCountry || user.country})`}
+                  <span className="text-[11px] text-muted-foreground">
+                    {feedMode === "global"
+                      ? "Global Feed (All Countries)"
+                      : feedMode === "regional"
+                        ? `My Region (${user.country})`
+                        : `Custom Filter (${activeBrowseCountry || user.country})`}
                   </span>
                 </div>
                 <button
@@ -1004,7 +734,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   onClick={() => {
                     onOpenRegionFilter();
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-[#FFB800] text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-muted hover:bg-black/15 text-white text-xs font-semibold flex items-center gap-1 transition-colors"
                 >
                   <SlidersHorizontal className="w-3 h-3" /> Change
                 </button>
@@ -1015,14 +745,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2.5 rounded-xl bg-neutral-800 text-neutral-300 text-xs font-medium"
+                className="px-4 py-2.5 rounded-xl bg-secondary text-neutral-300 text-xs font-medium"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveProfile}
-                className="flex-1 py-2.5 rounded-xl bg-[#FF6B00] hover:bg-[#E05300] text-white font-bold text-xs shadow-md transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-[var(--theme-color)] hover:bg-[var(--theme-hover)] text-foreground font-bold text-xs shadow-md transition-colors"
               >
                 Save Changes
               </button>
@@ -1031,146 +761,259 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       )}
 
-      {/* Settings Modal (Monsoon / iOS Sheet with Inset Grouped Rows) */}
+      {/* Instagram-style Edit Profile Sheet */}
       {isSettingsModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-[#121826]/95 backdrop-blur-2xl border border-white/10 rounded-t-[32px] sm:rounded-[32px] max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
-            {/* Grabber */}
-            <div className="w-10 h-1.5 rounded-full bg-white/20 mx-auto mb-1 sm:hidden" />
-
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#FF6B00]/15 border border-[#FF6B00]/30 flex items-center justify-center text-[#FF6B00]">
-                  <Settings className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-brand font-bold text-white text-base">
-                    Settings
-                  </h3>
-                  <p className="text-[11px] text-[#94A3B8]">Display, Region & Account</p>
-                </div>
-              </div>
+        <div className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm flex flex-col">
+          {/* Instagram-style full-screen Edit Profile sheet */}
+          <div className="flex flex-col w-full h-full max-w-lg mx-auto apple-sheet-enter">
+            {/* Top bar — Cancel | Edit Profile | Done */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-[#121212]">
               <button
                 onClick={() => setIsSettingsModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white flex items-center justify-center transition-colors"
+                className="text-[15px] text-neutral-300 font-normal active:opacity-60 transition-opacity"
               >
-                <X className="w-3.5 h-3.5" />
+                Cancel
               </button>
-            </div>
-
-            {/* Section 1: Appearance & Cinema Theme */}
-            <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    {theatreMode ? <Moon className="w-3.5 h-3.5 text-[#FF6B00]" /> : <Sun className="w-3.5 h-3.5 text-[#FFB800]" />}
-                    <span>Theme Appearance</span>
-                  </div>
-                  <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                    {theatreMode
-                      ? 'Golden & Fluorescent Dark Mode (#0A0E17)'
-                      : 'Studio Light Mode (#FAF9F5)'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Segmented Control */}
-              <div className="p-1 rounded-xl bg-black/60 border border-white/5 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!theatreMode && onToggleTheatreMode) onToggleTheatreMode();
-                  }}
-                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
-                    theatreMode
-                      ? 'bg-[#FF6B00] text-white font-bold shadow-md shadow-[#FF6B00]/25'
-                      : 'text-[#94A3B8] hover:text-white'
-                  }`}
-                >
-                  <Moon className="w-3.5 h-3.5" />
-                  <span>Dark</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (theatreMode && onToggleTheatreMode) onToggleTheatreMode();
-                  }}
-                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
-                    !theatreMode
-                      ? 'bg-white text-neutral-900 font-bold shadow-sm'
-                      : 'text-[#94A3B8] hover:text-white'
-                  }`}
-                >
-                  <Sun className="w-3.5 h-3.5" />
-                  <span>Light</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Section 2: Cinema Feed Region & Localization */}
-            {onOpenRegionFilter && (
-              <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-[#FFB800]" />
-                      <span>Feed Region</span>
-                    </div>
-                    <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                      {feedMode === 'global'
-                        ? 'Global Stream (All Countries)'
-                        : feedMode === 'regional'
-                        ? `${user.country} (${user.languages.join(', ')})`
-                        : `${activeBrowseCountry || user.country}`}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSettingsModalOpen(false);
-                      onOpenRegionFilter();
-                    }}
-                    className="px-3.5 py-1.5 rounded-full bg-[#FF6B00]/15 border border-[#FF6B00]/30 text-[#FF6B00] text-xs font-bold flex items-center gap-1 transition-all active:scale-95"
-                  >
-                    <SlidersHorizontal className="w-3 h-3" /> Change
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Section 3: Profile & Account */}
-            <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
-                    <span>Filmmaker Account</span>
-                  </div>
-                  <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                    <span className="text-neutral-200 font-semibold">{user.name}</span> · {user.roles[0]}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSettingsModalOpen(false);
-                    setIsEditing(true);
-                  }}
-                  className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-white text-xs font-semibold flex items-center gap-1 transition-all active:scale-95 border border-white/10"
-                >
-                  <Edit3 className="w-3 h-3" /> Edit
-                </button>
-              </div>
-            </div>
-
-            <div className="pt-2">
+              <span className="text-[15px] font-bold text-foreground">Edit profile</span>
               <button
-                type="button"
-                onClick={() => setIsSettingsModalOpen(false)}
-                className="w-full py-3 rounded-full bg-[#FF6B00] hover:bg-[#E05300] text-white text-sm font-bold transition-all shadow-md active:scale-[0.98]"
+                onClick={() => {
+                  const updated: User = {
+                    ...user,
+                    name: editName,
+                    username: editUsername,
+                    bio: editBio,
+                    country: editRegion || user.country,
+                    portfolioUrl: editLink || user.portfolioUrl,
+                    coverImage: editBannerUrl || user.coverImage,
+                    roles: editRoles.length > 0 ? editRoles : user.roles,
+                    experienceLevel: editExperience,
+                  };
+                  onUpdateProfile(updated);
+                  setBannerPreview(editBannerUrl || user.coverImage || "");
+                  setIsSettingsModalOpen(false);
+                }}
+                className="text-[15px] font-bold text-[var(--theme-color)] active:opacity-60 transition-opacity"
               >
                 Done
               </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto bg-[#121212]">
+              {/* Banner edit row */}
+              <div className="relative w-full h-24 bg-gradient-to-br from-[#1a0033] via-[#3b0082] to-[#0d1117] group overflow-hidden border-b border-white/[0.07]">
+                {(bannerPreview || user.coverImage) && (
+                  <img
+                    src={bannerPreview || user.coverImage}
+                    alt="Banner"
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                <button
+                  onClick={() => bannerInputRef.current?.click()}
+                  className="absolute inset-0 bg-background/0 group-hover:bg-background/50 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                >
+                  <Camera className="w-5 h-5 text-foreground" />
+                  <span className="text-[11px] text-foreground font-semibold">Change banner</span>
+                </button>
+                <span className="absolute top-2 left-3 text-[10px] text-foreground/50 font-mono uppercase tracking-widest">
+                  Banner
+                </span>
+              </div>
+
+              {/* Avatar edit row */}
+              <div className="flex flex-col items-center py-6 border-b border-white/[0.07]">
+                <div className="relative" onClick={() => avatarInputRef.current?.click()}>
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-20 h-20 rounded-full object-cover border-2 border-border"
+                  />
+                  <div className="absolute inset-0 rounded-full bg-background/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                    <Edit3 className="w-5 h-5 text-foreground" />
+                  </div>
+                </div>
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="mt-2.5 text-[13px] font-semibold text-[var(--theme-color)] active:opacity-60"
+                >
+                  Edit photo
+                </button>
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarFileChange}
+                />
+              </div>
+
+              {/* Field rows — Instagram inset grouped style */}
+              <div className="divide-y divide-white/[0.07]">
+                {/* Name */}
+                <div className="flex items-center px-4 py-3.5">
+                  <span className="w-28 text-[14px] font-semibold text-foreground shrink-0">Name</span>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Name"
+                    className="flex-1 bg-transparent text-[14px] text-foreground placeholder-neutral-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Username */}
+                <div className="flex items-center px-4 py-3.5">
+                  <span className="w-28 text-[14px] font-semibold text-foreground shrink-0">
+                    Username
+                  </span>
+                  <input
+                    type="text"
+                    value={editUsername}
+                    onChange={(e) =>
+                      setEditUsername(e.target.value.replace(/\s/g, "").toLowerCase())
+                    }
+                    placeholder="username"
+                    className="flex-1 bg-transparent text-[14px] text-foreground placeholder-neutral-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Pronouns */}
+                <div className="flex items-center px-4 py-3.5">
+                  <span className="w-28 text-[14px] font-semibold text-foreground shrink-0">
+                    Pronouns
+                  </span>
+                  <input
+                    type="text"
+                    value={editPronouns}
+                    onChange={(e) => setEditPronouns(e.target.value)}
+                    placeholder="Add pronouns"
+                    className="flex-1 bg-transparent text-[14px] text-foreground placeholder-neutral-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Bio */}
+                <div className="flex items-start px-4 py-3.5">
+                  <span className="w-28 text-[14px] font-semibold text-foreground shrink-0 pt-0.5">
+                    Bio
+                  </span>
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    placeholder="Bio"
+                    rows={3}
+                    maxLength={150}
+                    className="flex-1 bg-transparent text-[14px] text-foreground placeholder-neutral-500 focus:outline-none resize-none leading-snug"
+                  />
+                </div>
+
+                {/* Link */}
+                <div className="flex items-center px-4 py-3.5">
+                  <span className="w-28 text-[14px] font-semibold text-foreground shrink-0">Link</span>
+                  <input
+                    type="url"
+                    value={editLink}
+                    onChange={(e) => setEditLink(e.target.value)}
+                    placeholder="Add link"
+                    className="flex-1 bg-transparent text-[14px] text-[var(--theme-color)] placeholder-neutral-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Region row */}
+              <div className="flex items-center px-4 py-3.5 border-t border-white/[0.07]">
+                <span className="w-28 text-[14px] font-semibold text-foreground shrink-0">Region</span>
+                <input
+                  type="text"
+                  value={editRegion}
+                  onChange={(e) => setEditRegion(e.target.value)}
+                  placeholder="e.g. United Kingdom, New York"
+                  className="flex-1 bg-transparent text-[14px] text-foreground placeholder-neutral-500 focus:outline-none"
+                />
+              </div>
+
+              {/* ── Preferences section ── */}
+              <div className="px-4 pt-5 pb-2">
+                <p className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-3">
+                  Preferences
+                </p>
+
+                {/* App Theme */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Palette className="w-4 h-4 text-neutral-300" />
+                    <p className="text-[13px] font-semibold text-neutral-300">App Theme</p>
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                    {THEMES.map((theme) => (
+                      <button
+                        key={theme.name}
+                        type="button"
+                        onClick={() => applyTheme(theme)}
+                        className={`flex flex-col items-center gap-1.5 shrink-0 transition-transform active:scale-95`}
+                      >
+                        <div 
+                          className={`w-10 h-10 rounded-full flex items-center justify-center border-[3px] transition-all`}
+                          style={{ 
+                            backgroundColor: theme.color, 
+                            borderColor: editTheme === theme.color ? 'white' : 'transparent',
+                            boxShadow: editTheme === theme.color ? `0 0 15px ${theme.color}60` : 'none'
+                          }}
+                        >
+                          {editTheme === theme.color && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                        </div>
+                        <span className={`text-[10px] font-semibold ${editTheme === theme.color ? 'text-white' : 'text-neutral-500'}`}>
+                          {theme.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Experience Level */}
+                <p className="text-[13px] font-semibold text-neutral-300 mb-2">Experience Level</p>
+                <div className="flex gap-2 mb-5">
+                  {(["Newcomer", "Mid-level", "Experienced"] as const).map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setEditExperience(lvl)}
+                      className={`flex-1 py-2 rounded-xl text-[12px] font-semibold border transition-all active:scale-95 ${
+                        editExperience === lvl
+                          ? "bg-[var(--theme-color)] border-[var(--theme-color)] text-foreground shadow-md shadow-[var(--theme-color)]/30"
+                          : "border-border bg-black/[0.04] text-muted-foreground hover:text-foreground hover:bg-black/[0.08]"
+                      }`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Cinema Roles */}
+                <p className="text-[13px] font-semibold text-neutral-300 mb-2">Cinema Roles</p>
+                <div className="flex flex-wrap gap-2">
+                  {ALL_ROLES.map((role) => {
+                    const active = editRoles.includes(role);
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => handleRoleToggle(role)}
+                        className={`px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all active:scale-95 ${
+                          active
+                            ? "bg-[var(--theme-color)]/20 border-[var(--theme-color)]/60 text-[var(--theme-color)]"
+                            : "border-border bg-black/[0.04] text-muted-foreground hover:text-foreground hover:border-border"
+                        }`}
+                      >
+                        {role}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Bottom padding */}
+              <div className="h-10" />
             </div>
           </div>
         </div>
