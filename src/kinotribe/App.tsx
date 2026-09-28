@@ -180,6 +180,39 @@ function KinoApp({
   const [activeBrowseLanguage, setActiveBrowseLanguage] = useState<string>(
     CURRENT_USER.languages[0] || "English",
   );
+  const [nearbyRadiusKm, setNearbyRadiusKm] = useState<number>(50);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
+  const updateMyLocation = async () => {
+    setLocating(true);
+    setLocationError("");
+    try {
+      const place = await detectPlace();
+      const patch: Record<string, unknown> = {
+        latitude: place.latitude,
+        longitude: place.longitude,
+        city: place.city || null,
+      };
+      if (place.country) patch["country"] = place.country;
+      if (place.countryCode) patch["country_code"] = place.countryCode;
+      await api.updateProfile(me.id, patch);
+      setCurrentUser((u) => ({
+        ...u,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        ...(place.city ? { city: place.city } : {}),
+        ...(place.country ? { country: place.country } : {}),
+        ...(place.countryCode ? { countryCode: place.countryCode } : {}),
+      }));
+      setActiveBrowseCountry(place.country || activeBrowseCountry);
+      setFeedMode("regional");
+    } catch (e) {
+      setLocationError(e instanceof Error ? e.message : "Couldn't get your location.");
+    } finally {
+      setLocating(false);
+    }
+  };
 
   const [isMobileFrameView, setIsMobileFrameView] = useState<boolean>(false);
   const isMobileDevice = useIsMobile();
@@ -368,6 +401,15 @@ function KinoApp({
       authorId: me.id,
       author: currentUser,
       createdAt: "Just now",
+      ...(currentUser.latitude != null && currentUser.longitude != null
+        ? {
+            latitude: currentUser.latitude,
+            longitude: currentUser.longitude,
+            ...(currentUser.city ? { city: currentUser.city } : {}),
+            country: newPost.country || currentUser.country,
+            countryCode: newPost.countryCode || currentUser.countryCode,
+          }
+        : {}),
     };
 
     // 1. Optimistically display at the top of the feed immediately
@@ -510,7 +552,19 @@ function KinoApp({
     if (feedMode === "global") return true;
 
     if (feedMode === "regional") {
-      // Filter by user's country or language
+      // GPS-based: posts within the chosen radius of the user's location
+      if (
+        currentUser.latitude != null &&
+        currentUser.longitude != null &&
+        post.latitude != null &&
+        post.longitude != null
+      ) {
+        return (
+          distanceKm(currentUser.latitude, currentUser.longitude, post.latitude, post.longitude) <=
+          nearbyRadiusKm
+        );
+      }
+      // Fallback: user's country or language
       const postCountry = (post.country || "").trim().toLowerCase();
       const userCountry = (currentUser.country || "").trim().toLowerCase();
       const matchCountry = postCountry && userCountry && postCountry === userCountry;
