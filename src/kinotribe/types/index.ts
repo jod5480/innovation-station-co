@@ -25,6 +25,9 @@ export interface User {
   bio: string;
   country: string;
   countryCode: string; // e.g. 'US', 'FR', 'IN', 'GB', 'KR', 'NG', 'JP'
+  city?: string;
+  latitude?: number;
+  longitude?: number;
   languages: string[];
   roles: CinemaRole[];
   experienceLevel: ExperienceLevel;
@@ -92,6 +95,9 @@ export interface Post {
   castingDetails?: CastingDetails;
   country: string;
   countryCode: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
   language: string;
   likes: number;
   isLiked: boolean;
