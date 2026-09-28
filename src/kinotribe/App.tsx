@@ -65,6 +65,7 @@ import { ProfileView } from "./components/profile/ProfileView";
 import { NotificationsDrawer } from "./components/notifications/NotificationsDrawer";
 import { DirectMessagesDrawer } from "./components/messages/DirectMessagesDrawer";
 import { AuthModal } from "./components/auth/AuthModal";
+import { detectPlace, distanceKm } from "./lib/geo";
 
 type MainTab = "feed" | "explore" | "casting" | "profile";
 
@@ -1027,7 +1028,7 @@ function KinoApp({
                 {feedMode === "global"
                   ? "🌐 Global"
                   : feedMode === "regional"
-                    ? `${userCountryObj?.flag || "📍"} ${currentUser.country}`
+                    ? `${userCountryObj?.flag || "📍"} ${currentUser.city ? `${currentUser.city} · ${nearbyRadiusKm}km` : currentUser.country}`
                     : `${activeCountryObj?.flag || "📍"} ${activeBrowseCountry}`}
               </span>
             </button>
@@ -1681,6 +1682,13 @@ function KinoApp({
         onSelectLanguage={setActiveBrowseLanguage}
         userCountry={currentUser.country}
         userLanguage={currentUser.languages[0] || "English"}
+        userCity={currentUser.city}
+        hasGps={currentUser.latitude != null}
+        locating={locating}
+        locationError={locationError}
+        onDetectLocation={updateMyLocation}
+        radiusKm={nearbyRadiusKm}
+        onRadiusChange={setNearbyRadiusKm}
       />
 
       {/* 9. Notifications Drawer */}
