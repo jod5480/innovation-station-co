@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Eye, EyeOff, Loader2, Check, X, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+
 
 type Mode = "login" | "signup" | "forgot";
 
