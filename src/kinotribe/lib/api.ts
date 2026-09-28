@@ -666,6 +666,9 @@ export async function createPost(post: Post, userId: string) {
         casting_details: (post.castingDetails ?? null) as never,
         country: post.country,
         country_code: post.countryCode,
+        ...(post.latitude != null && post.longitude != null
+          ? { latitude: post.latitude, longitude: post.longitude, city: post.city ?? null }
+          : {}),
         language: post.language,
         tags: post.tags,
         is_portfolio: post.isPortfolio ?? false,
