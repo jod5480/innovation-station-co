@@ -72,13 +72,7 @@ export const AuthGate: React.FC = () => {
     setBusy(true);
     try {
       if (mode === "login") {
-        let loginEmail = email.trim();
-        if (!loginEmail.includes("@")) {
-          const { data: foundEmail, error: rpcError } = await (supabase.rpc as any)("get_email_for_username", { p_username: loginEmail.toLowerCase() });
-          if (rpcError || !foundEmail) throw new Error("Incorrect username or password.");
-          loginEmail = foundEmail;
-        }
-        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
@@ -165,7 +159,7 @@ export const AuthGate: React.FC = () => {
         <form onSubmit={submit} className="space-y-3">
           {mode === "login" && (
             <>
-              <input className={inputCls} type="text" autoComplete="username" placeholder="Email or Username"
+              <input className={inputCls} type="email" autoComplete="email" placeholder="Email address"
                 value={email} onChange={(e) => setEmail(e.target.value)} required />
               {passwordField}
               <div className="text-right">
