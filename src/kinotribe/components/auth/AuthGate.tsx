@@ -64,11 +64,6 @@ export const AuthGate: React.FC = () => {
     setInfo("");
   };
 
-  const google = async () => {
-    setError("");
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) setError(result.error.message || "Google sign-in failed.");
-  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,19 +149,6 @@ export const AuthGate: React.FC = () => {
     </>
   );
 
-  const googleBtn = (
-    <>
-      <button type="button" onClick={google} className={secondaryBtn + " flex items-center justify-center gap-2"}>
-        <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden>
-          <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4-5.5 4-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.2 14.7 2.2 12 2.2 6.6 2.2 2.2 6.6 2.2 12s4.4 9.8 9.8 9.8c5.7 0 9.4-4 9.4-9.6 0-.6-.1-1.1-.2-1.6H12z" />
-        </svg>
-        Continue with Google
-      </button>
-      <div className="flex items-center gap-3 text-[11px] text-neutral-500">
-        <div className="h-px flex-1 bg-[#363636]" />OR<div className="h-px flex-1 bg-[#363636]" />
-      </div>
-    </>
-  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#121212] antialiased font-sans w-full">
@@ -177,7 +159,6 @@ export const AuthGate: React.FC = () => {
         <form onSubmit={submit} className="space-y-3">
           {mode === "login" && (
             <>
-              {googleBtn}
               <input className={inputCls} type="email" autoComplete="email" placeholder="Email address"
                 value={email} onChange={(e) => setEmail(e.target.value)} required />
               {passwordField}
@@ -214,7 +195,6 @@ export const AuthGate: React.FC = () => {
 
           {mode === "signup" && (
             <>
-              {googleBtn}
               <input className={inputCls} type="email" autoComplete="email" placeholder="Email address"
                 value={email} onChange={(e) => setEmail(e.target.value)} required />
               {passwordField}
