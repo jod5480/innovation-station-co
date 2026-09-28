@@ -379,7 +379,6 @@ export type Database = {
         Row: {
           author_id: string
           casting_details: Json | null
-          city: string | null
           content: Json
           country: string
           country_code: string
@@ -387,8 +386,6 @@ export type Database = {
           id: string
           is_portfolio: boolean
           language: string
-          latitude: number | null
-          longitude: number | null
           portfolio_role: string | null
           tags: string[]
           type: string
@@ -397,7 +394,6 @@ export type Database = {
         Insert: {
           author_id: string
           casting_details?: Json | null
-          city?: string | null
           content?: Json
           country?: string
           country_code?: string
@@ -405,8 +401,6 @@ export type Database = {
           id?: string
           is_portfolio?: boolean
           language?: string
-          latitude?: number | null
-          longitude?: number | null
           portfolio_role?: string | null
           tags?: string[]
           type?: string
@@ -415,7 +409,6 @@ export type Database = {
         Update: {
           author_id?: string
           casting_details?: Json | null
-          city?: string | null
           content?: Json
           country?: string
           country_code?: string
@@ -423,8 +416,6 @@ export type Database = {
           id?: string
           is_portfolio?: boolean
           language?: string
-          latitude?: number | null
-          longitude?: number | null
           portfolio_role?: string | null
           tags?: string[]
           type?: string
@@ -444,8 +435,6 @@ export type Database = {
         Row: {
           avatar: string
           bio: string
-          birthday: string | null
-          city: string | null
           country: string
           country_code: string
           cover_image: string | null
@@ -456,8 +445,6 @@ export type Database = {
           instagram_url: string | null
           is_verified: boolean
           languages: string[]
-          latitude: number | null
-          longitude: number | null
           name: string
           portfolio_url: string | null
           roles: string[]
@@ -468,8 +455,6 @@ export type Database = {
         Insert: {
           avatar?: string
           bio?: string
-          birthday?: string | null
-          city?: string | null
           country?: string
           country_code?: string
           cover_image?: string | null
@@ -480,8 +465,6 @@ export type Database = {
           instagram_url?: string | null
           is_verified?: boolean
           languages?: string[]
-          latitude?: number | null
-          longitude?: number | null
           name?: string
           portfolio_url?: string | null
           roles?: string[]
@@ -492,8 +475,6 @@ export type Database = {
         Update: {
           avatar?: string
           bio?: string
-          birthday?: string | null
-          city?: string | null
           country?: string
           country_code?: string
           cover_image?: string | null
@@ -504,8 +485,6 @@ export type Database = {
           instagram_url?: string | null
           is_verified?: boolean
           languages?: string[]
-          latitude?: number | null
-          longitude?: number | null
           name?: string
           portfolio_url?: string | null
           roles?: string[]
@@ -558,7 +537,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_username_available: { Args: { _username: string }; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

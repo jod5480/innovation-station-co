@@ -150,9 +150,6 @@ type ProfileRow = {
   showreel_video_url: string | null;
   is_verified: boolean;
   created_at: string;
-  city?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
 };
 
 const FALLBACK_AVATAR =
@@ -171,9 +168,6 @@ export function mapProfile(
     bio: row.bio || "",
     country: row.country || "Global",
     countryCode: row.country_code || "US",
-    city: row.city ?? undefined,
-    latitude: row.latitude ?? undefined,
-    longitude: row.longitude ?? undefined,
     languages: row.languages?.length ? row.languages : ["English"],
     roles: (row.roles?.length ? row.roles : ["Directing"]) as CinemaRole[],
     experienceLevel: (row.experience_level || "Newcomer") as ExperienceLevel,
@@ -383,9 +377,6 @@ export async function loadEverything(currentUserId: string): Promise<FeedData> {
         castingDetails: casting,
         country: p.country,
         countryCode: p.country_code,
-        city: (p as { city?: string | null }).city ?? undefined,
-        latitude: (p as { latitude?: number | null }).latitude ?? undefined,
-        longitude: (p as { longitude?: number | null }).longitude ?? undefined,
         language: p.language,
         likes: likers.length,
         isLiked: likers.includes(currentUserId),
@@ -666,9 +657,6 @@ export async function createPost(post: Post, userId: string) {
         casting_details: (post.castingDetails ?? null) as never,
         country: post.country,
         country_code: post.countryCode,
-        ...(post.latitude != null && post.longitude != null
-          ? { latitude: post.latitude, longitude: post.longitude, city: post.city ?? null }
-          : {}),
         language: post.language,
         tags: post.tags,
         is_portfolio: post.isPortfolio ?? false,
