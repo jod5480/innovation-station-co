@@ -1,5 +1,5 @@
 import React from "react";
-import { X, Globe, MapPin, Check } from "lucide-react";
+import { X, Globe, MapPin, Check, LocateFixed, Loader2 } from "lucide-react";
 import { COUNTRIES_DATA, LANGUAGES_LIST } from "../../data/mockCinemaData";
 import { FeedFilterMode } from "../../types";
 
@@ -14,6 +14,13 @@ interface RegionFilterModalProps {
   onSelectLanguage: (language: string) => void;
   userCountry: string;
   userLanguage: string;
+  userCity?: string | undefined;
+  hasGps?: boolean;
+  locating?: boolean;
+  locationError?: string;
+  onDetectLocation?: () => void;
+  radiusKm?: number;
+  onRadiusChange?: (km: number) => void;
 }
 
 export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
@@ -27,6 +34,13 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
   onSelectLanguage,
   userCountry,
   userLanguage,
+  userCity,
+  hasGps,
+  locating,
+  locationError,
+  onDetectLocation,
+  radiusKm = 50,
+  onRadiusChange,
 }) => {
   if (!isOpen) return null;
 
@@ -57,6 +71,48 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
         </div>
 
         <div className="p-5 overflow-y-auto space-y-5 text-xs">
+          {/* GPS location */}
+          <div className="space-y-2 p-3 rounded-xl border border-border bg-background/50">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <span className="font-bold text-xs text-foreground block">
+                  {hasGps ? `📍 ${userCity || userCountry}` : "Use my exact location"}
+                </span>
+                <span className="text-[10px] text-muted-foreground block">
+                  {hasGps ? "Your Regional feed shows posts near you" : "Turn on GPS to see posts near you"}
+                </span>
+              </div>
+              <button
+                onClick={onDetectLocation}
+                disabled={locating}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--theme-color)] text-white font-bold text-[11px] disabled:opacity-60"
+              >
+                {locating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
+                {hasGps ? "Update" : "Detect"}
+              </button>
+            </div>
+            {locationError && <p className="text-[11px] text-red-400">{locationError}</p>}
+            {hasGps && onRadiusChange && (
+              <div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                  <span>Distance</span>
+                  <span className="text-foreground font-bold">{radiusKm} km</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1">
+                  {[5, 10, 25, 50, 100].map((km) => (
+                    <button
+                      key={km}
+                      onClick={() => onRadiusChange(km)}
+                      className={`py-1 rounded-md text-[11px] ${radiusKm === km ? "bg-[var(--theme-color)] text-white font-bold" : "bg-muted text-neutral-300"}`}
+                    >
+                      {km}km
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Main 3 Modes */}
           <div className="space-y-2">
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block">
@@ -77,7 +133,7 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
               >
                 <MapPin className="w-4 h-4 mb-1 text-white" />
                 <span className="font-bold text-xs">My Region</span>
-                <span className="text-[10px] text-neutral-500 truncate mt-0.5">{userCountry}</span>
+                <span className="text-[10px] text-neutral-500 truncate mt-0.5">{userCity || userCountry}</span>
               </button>
 
               <button
