@@ -1044,9 +1044,9 @@ export async function getMyProfile(userId: string): Promise<User | null> {
 
 export async function saveMyLocation(userId: string, loc: GeoLocation) {
   const patch: Record<string, unknown> = { latitude: loc.latitude, longitude: loc.longitude };
-  if (loc.city) patch.city = loc.city;
-  if (loc.country) patch.country = loc.country;
-  if (loc.countryCode) patch.country_code = loc.countryCode;
+  if (loc.city) patch["city"] = loc.city;
+  if (loc.country) patch["country"] = loc.country;
+  if (loc.countryCode) patch["country_code"] = loc.countryCode;
   const { error } = await supabase.from("profiles").update(patch as never).eq("id", userId);
   if (error) console.warn("Could not save location", error);
 }
