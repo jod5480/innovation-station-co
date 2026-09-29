@@ -60,7 +60,7 @@ interface ProfileViewProps {
   onUpdateProfile: (updated: User) => void;
   onOpenApply: (post: Post) => void;
   onOpenAuthModal?: (mode?: "login" | "signup") => void;
-  feedMode?: "regional" | "global" | "custom";
+  feedMode?: "regional" | "global" | "custom" | "nearby";
   activeBrowseCountry?: string;
   activeBrowseLanguage?: string;
   onOpenRegionFilter?: () => void;
