@@ -57,6 +57,7 @@ import { ApplyCastingModal } from "./components/modals/ApplyCastingModal";
 import { CreatePostModal } from "./components/modals/CreatePostModal";
 import { CreateStoryModal } from "./components/modals/CreateStoryModal";
 import { PostDetailModal } from "./components/feed/PostDetailModal";
+import { getSavedLocation, distanceKm, type GeoLocation } from "./lib/geo";
 import { RegionFilterModal } from "./components/feed/RegionFilterModal";
 import { SettingsMenu } from "./components/profile/SettingsMenu";
 import { CastingExploreTab } from "./components/casting/CastingExploreTab";
@@ -185,6 +186,17 @@ function KinoApp({
   // Region & Language Feed Filters
   const [feedMode, setFeedMode] = useState<FeedFilterMode>("global");
   const [activeBrowseCountry, setActiveBrowseCountry] = useState<string>(CURRENT_USER.country);
+  const [myLocation, setMyLocation] = useState<GeoLocation | null>(() => getSavedLocation());
+  const [nearbyRadius, setNearbyRadius] = useState<number>(25);
+  useEffect(() => {
+    const h = (e: Event) => {
+      const loc = (e as CustomEvent<GeoLocation>).detail;
+      setMyLocation(loc);
+      api.saveMyLocation(CURRENT_USER.id, loc);
+    };
+    window.addEventListener("ct-location", h);
+    return () => window.removeEventListener("ct-location", h);
+  }, [CURRENT_USER.id]);
   const [activeBrowseLanguage, setActiveBrowseLanguage] = useState<string>(
     CURRENT_USER.languages[0] || "English",
   );
@@ -517,6 +529,14 @@ function KinoApp({
 
     if (feedMode === "global") return true;
 
+    if (feedMode === "nearby") {
+      if (!myLocation || post.latitude == null || post.longitude == null) return false;
+      return (
+        distanceKm(myLocation.latitude, myLocation.longitude, post.latitude, post.longitude) <=
+        nearbyRadius
+      );
+    }
+
     if (feedMode === "regional") {
       // Filter by user's country or language
       const postCountry = (post.country || "").trim().toLowerCase();
@@ -543,6 +563,13 @@ function KinoApp({
 
     return true;
   });
+  if (feedMode === "nearby" && myLocation) {
+    const d = (p: Post) =>
+      p.latitude == null || p.longitude == null
+        ? Infinity
+        : distanceKm(myLocation.latitude, myLocation.longitude, p.latitude, p.longitude);
+    visibleFeedPosts.sort((a, b) => d(a) - d(b));
+  }
 
   const activeCountryObj = COUNTRIES_DATA.find((c) => c.name === activeBrowseCountry);
   const userCountryObj = COUNTRIES_DATA.find((c) => c.name === currentUser.country);
@@ -959,7 +986,9 @@ function KinoApp({
                       ? "Following Feed"
                       : feedFilterCategory === "casting_only"
                         ? "Casting & Auditions"
-                        : feedMode === "global"
+                        : feedMode === "nearby"
+                          ? `Near ${myLocation?.city || "you"} · ${nearbyRadius} km`
+                          : feedMode === "global"
                           ? "Global Cinema Stream"
                           : `${currentUser.country} Cinema`}
                   </span>
@@ -978,7 +1007,9 @@ function KinoApp({
             >
               <MapPin className="w-3 h-3 text-white" />
               <span className="font-medium">
-                {feedMode === "global"
+                {feedMode === "nearby"
+                  ? `📍 ${myLocation?.city || "Nearby"} · ${nearbyRadius} km`
+                  : feedMode === "global"
                   ? "🌐 Global"
                   : feedMode === "regional"
                     ? `${userCountryObj?.flag || "📍"} ${currentUser.country}`
@@ -1635,6 +1666,9 @@ function KinoApp({
         onSelectLanguage={setActiveBrowseLanguage}
         userCountry={currentUser.country}
         userLanguage={currentUser.languages[0] || "English"}
+        myLocation={myLocation}
+        nearbyRadius={nearbyRadius}
+        onSetNearbyRadius={setNearbyRadius}
       />
 
       {/* 9. Notifications Drawer */}
