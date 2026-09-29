@@ -73,58 +73,63 @@ export default function App() {
   const [boot, setBoot] = useState<{ me: User; data: api.FeedData } | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("cinetribe_guest") === "true") {
-      setSession({ userId: api.GUEST_USER_ID });
-      return;
-    }
+    localStorage.removeItem("cinetribe_guest");
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        setSession({ userId: data.session.user.id });
-      } else if (localStorage.getItem("cinetribe_guest") === "true") {
-        setSession({ userId: api.GUEST_USER_ID });
-      } else {
-        setSession(null);
-      }
+      setSession(data.session ? { userId: data.session.user.id } : null);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s) {
-        localStorage.removeItem("cinetribe_guest");
-        setSession({ userId: s.user.id });
-      } else if (localStorage.getItem("cinetribe_guest") === "true") {
-        setSession({ userId: api.GUEST_USER_ID });
-      } else {
-        setSession(null);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      if (event === "PASSWORD_RECOVERY") {
+        window.location.href = "/reset-password";
+        return;
       }
+      setSession((prev) => {
+        const next = s ? { userId: s.user.id } : null;
+        return prev?.userId === next?.userId ? prev : next;
+      });
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  const [bootError, setBootError] = useState("");
   useEffect(() => {
     setBoot(null);
+    setBootError("");
     if (!session) return;
     let cancelled = false;
     (async () => {
       try {
-        const [me, data] = await Promise.all([
-          api.getMyProfile(session.userId),
-          api.loadEverything(session.userId),
-        ]);
-        if (!cancelled && me) {
-          setBoot({ me, data });
-        } else if (!cancelled && !me) {
-          setBoot({ me: api.GUEST_USER, data: await api.loadEverything(api.GUEST_USER_ID) });
+        let me = await api.getMyProfile(session.userId);
+        if (!me) {
+          await new Promise((r) => setTimeout(r, 1200));
+          me = await api.getMyProfile(session.userId);
         }
+        const data = await api.loadEverything(session.userId);
+        if (cancelled) return;
+        if (me) setBoot({ me, data });
+        else setBootError("We couldn't load your profile.");
       } catch (err) {
         console.error("Boot error:", err);
-        if (!cancelled) {
-          setBoot({ me: api.GUEST_USER, data: await api.loadEverything(api.GUEST_USER_ID) });
-        }
+        if (!cancelled) setBootError("Something went wrong loading your account.");
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [session]);
+
+  if (session === null) return <AuthGate />;
+  if (bootError)
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background text-muted-foreground text-sm">
+        <p>{bootError}</p>
+        <button
+          className="rounded-full bg-[var(--theme-color)] text-white px-5 py-2 font-bold"
+          onClick={() => supabase.auth.signOut()}
+        >
+          Sign out
+        </button>
+      </div>
+    );
 
   if (session === null) return <AuthGate />;
   if (!boot)
