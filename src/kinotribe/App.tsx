@@ -57,6 +57,7 @@ import { ApplyCastingModal } from "./components/modals/ApplyCastingModal";
 import { CreatePostModal } from "./components/modals/CreatePostModal";
 import { CreateStoryModal } from "./components/modals/CreateStoryModal";
 import { PostDetailModal } from "./components/feed/PostDetailModal";
+import { getSavedLocation, distanceKm, type GeoLocation } from "./lib/geo";
 import { RegionFilterModal } from "./components/feed/RegionFilterModal";
 import { SettingsMenu } from "./components/profile/SettingsMenu";
 import { CastingExploreTab } from "./components/casting/CastingExploreTab";
@@ -73,58 +74,63 @@ export default function App() {
   const [boot, setBoot] = useState<{ me: User; data: api.FeedData } | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && localStorage.getItem("cinetribe_guest") === "true") {
-      setSession({ userId: api.GUEST_USER_ID });
-      return;
-    }
+    localStorage.removeItem("cinetribe_guest");
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        setSession({ userId: data.session.user.id });
-      } else if (localStorage.getItem("cinetribe_guest") === "true") {
-        setSession({ userId: api.GUEST_USER_ID });
-      } else {
-        setSession(null);
-      }
+      setSession(data.session ? { userId: data.session.user.id } : null);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s) {
-        localStorage.removeItem("cinetribe_guest");
-        setSession({ userId: s.user.id });
-      } else if (localStorage.getItem("cinetribe_guest") === "true") {
-        setSession({ userId: api.GUEST_USER_ID });
-      } else {
-        setSession(null);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      if (event === "PASSWORD_RECOVERY") {
+        window.location.href = "/reset-password";
+        return;
       }
+      setSession((prev) => {
+        const next = s ? { userId: s.user.id } : null;
+        return prev?.userId === next?.userId ? prev : next;
+      });
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  const [bootError, setBootError] = useState("");
   useEffect(() => {
     setBoot(null);
+    setBootError("");
     if (!session) return;
     let cancelled = false;
     (async () => {
       try {
-        const [me, data] = await Promise.all([
-          api.getMyProfile(session.userId),
-          api.loadEverything(session.userId),
-        ]);
-        if (!cancelled && me) {
-          setBoot({ me, data });
-        } else if (!cancelled && !me) {
-          setBoot({ me: api.GUEST_USER, data: await api.loadEverything(api.GUEST_USER_ID) });
+        let me = await api.getMyProfile(session.userId);
+        if (!me) {
+          await new Promise((r) => setTimeout(r, 1200));
+          me = await api.getMyProfile(session.userId);
         }
+        const data = await api.loadEverything(session.userId);
+        if (cancelled) return;
+        if (me) setBoot({ me, data });
+        else setBootError("We couldn't load your profile.");
       } catch (err) {
         console.error("Boot error:", err);
-        if (!cancelled) {
-          setBoot({ me: api.GUEST_USER, data: await api.loadEverything(api.GUEST_USER_ID) });
-        }
+        if (!cancelled) setBootError("Something went wrong loading your account.");
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [session]);
+
+  if (session === null) return <AuthGate />;
+  if (bootError)
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background text-muted-foreground text-sm">
+        <p>{bootError}</p>
+        <button
+          className="rounded-full bg-[var(--theme-color)] text-white px-5 py-2 font-bold"
+          onClick={() => supabase.auth.signOut()}
+        >
+          Sign out
+        </button>
+      </div>
+    );
 
   if (session === null) return <AuthGate />;
   if (!boot)
@@ -180,6 +186,17 @@ function KinoApp({
   // Region & Language Feed Filters
   const [feedMode, setFeedMode] = useState<FeedFilterMode>("global");
   const [activeBrowseCountry, setActiveBrowseCountry] = useState<string>(CURRENT_USER.country);
+  const [myLocation, setMyLocation] = useState<GeoLocation | null>(() => getSavedLocation());
+  const [nearbyRadius, setNearbyRadius] = useState<number>(25);
+  useEffect(() => {
+    const h = (e: Event) => {
+      const loc = (e as CustomEvent<GeoLocation>).detail;
+      setMyLocation(loc);
+      api.saveMyLocation(CURRENT_USER.id, loc);
+    };
+    window.addEventListener("ct-location", h);
+    return () => window.removeEventListener("ct-location", h);
+  }, [CURRENT_USER.id]);
   const [activeBrowseLanguage, setActiveBrowseLanguage] = useState<string>(
     CURRENT_USER.languages[0] || "English",
   );
@@ -512,6 +529,14 @@ function KinoApp({
 
     if (feedMode === "global") return true;
 
+    if (feedMode === "nearby") {
+      if (!myLocation || post.latitude == null || post.longitude == null) return false;
+      return (
+        distanceKm(myLocation.latitude, myLocation.longitude, post.latitude, post.longitude) <=
+        nearbyRadius
+      );
+    }
+
     if (feedMode === "regional") {
       // Filter by user's country or language
       const postCountry = (post.country || "").trim().toLowerCase();
@@ -538,6 +563,13 @@ function KinoApp({
 
     return true;
   });
+  if (feedMode === "nearby" && myLocation) {
+    const d = (p: Post) =>
+      p.latitude == null || p.longitude == null
+        ? Infinity
+        : distanceKm(myLocation.latitude, myLocation.longitude, p.latitude, p.longitude);
+    visibleFeedPosts.sort((a, b) => d(a) - d(b));
+  }
 
   const activeCountryObj = COUNTRIES_DATA.find((c) => c.name === activeBrowseCountry);
   const userCountryObj = COUNTRIES_DATA.find((c) => c.name === currentUser.country);
@@ -954,7 +986,9 @@ function KinoApp({
                       ? "Following Feed"
                       : feedFilterCategory === "casting_only"
                         ? "Casting & Auditions"
-                        : feedMode === "global"
+                        : feedMode === "nearby"
+                          ? `Near ${myLocation?.city || "you"} · ${nearbyRadius} km`
+                          : feedMode === "global"
                           ? "Global Cinema Stream"
                           : `${currentUser.country} Cinema`}
                   </span>
@@ -973,7 +1007,9 @@ function KinoApp({
             >
               <MapPin className="w-3 h-3 text-white" />
               <span className="font-medium">
-                {feedMode === "global"
+                {feedMode === "nearby"
+                  ? `📍 ${myLocation?.city || "Nearby"} · ${nearbyRadius} km`
+                  : feedMode === "global"
                   ? "🌐 Global"
                   : feedMode === "regional"
                     ? `${userCountryObj?.flag || "📍"} ${currentUser.country}`
@@ -1630,6 +1666,9 @@ function KinoApp({
         onSelectLanguage={setActiveBrowseLanguage}
         userCountry={currentUser.country}
         userLanguage={currentUser.languages[0] || "English"}
+        myLocation={myLocation}
+        nearbyRadius={nearbyRadius}
+        onSetNearbyRadius={setNearbyRadius}
       />
 
       {/* 9. Notifications Drawer */}

@@ -102,6 +102,9 @@ export interface Post {
   portfolioRole?: string;
   tags: string[];
   taggedUsers?: string[];
+  latitude?: number;
+  longitude?: number;
+  city?: string;
 }
 
 export interface Application {
@@ -156,4 +159,4 @@ export interface DirectMessageConversation {
   messages: ChatMessage[];
 }
 
-export type FeedFilterMode = "regional" | "global" | "custom";
+export type FeedFilterMode = "regional" | "global" | "custom" | "nearby";

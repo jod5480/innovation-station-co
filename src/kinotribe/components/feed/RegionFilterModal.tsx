@@ -1,5 +1,6 @@
-import React from "react";
-import { X, Globe, MapPin, Check } from "lucide-react";
+import React, { useState } from "react";
+import { X, Globe, MapPin, Check, Navigation, Loader2 } from "lucide-react";
+import { detectLocation, type GeoLocation } from "../../lib/geo";
 import { COUNTRIES_DATA, LANGUAGES_LIST } from "../../data/mockCinemaData";
 import { FeedFilterMode } from "../../types";
 
@@ -14,6 +15,9 @@ interface RegionFilterModalProps {
   onSelectLanguage: (language: string) => void;
   userCountry: string;
   userLanguage: string;
+  myLocation?: GeoLocation | null;
+  nearbyRadius?: number;
+  onSetNearbyRadius?: (km: number) => void;
 }
 
 export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
@@ -27,8 +31,26 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
   onSelectLanguage,
   userCountry,
   userLanguage,
+  myLocation,
+  nearbyRadius = 25,
+  onSetNearbyRadius,
 }) => {
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState("");
   if (!isOpen) return null;
+
+  const locate = async () => {
+    setLocating(true);
+    setLocError("");
+    try {
+      await detectLocation();
+      onSetFilterMode("nearby");
+    } catch (e) {
+      setLocError(e instanceof Error ? e.message : "Couldn't detect location");
+    } finally {
+      setLocating(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/60 backdrop-blur-md animate-fade-in">
@@ -57,6 +79,50 @@ export const RegionFilterModal: React.FC<RegionFilterModalProps> = ({
         </div>
 
         <div className="p-5 overflow-y-auto space-y-5 text-xs">
+          {/* GPS Nearby */}
+          <div className={`p-4 rounded-2xl border space-y-3 ${filterMode === "nearby" ? "border-[var(--theme-color)] bg-[var(--theme-color)]/10" : "border-border bg-background/50"}`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Navigation className="w-4 h-4 text-[var(--theme-color)]" />
+                <div>
+                  <span className="font-bold text-xs text-foreground block">Nearby (GPS)</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {myLocation
+                      ? `${myLocation.city ? myLocation.city + ", " : ""}${myLocation.country || ""}${myLocation.accuracy ? ` · ±${Math.round(myLocation.accuracy)} m` : ""}`
+                      : "Posts from people around you"}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={myLocation ? () => onSetFilterMode("nearby") : locate}
+                disabled={locating}
+                className="px-3 py-1.5 rounded-full bg-[var(--theme-color)] text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-60"
+              >
+                {locating && <Loader2 className="w-3 h-3 animate-spin" />}
+                {myLocation ? (filterMode === "nearby" ? "Active" : "Use") : "Enable location"}
+              </button>
+            </div>
+            {myLocation && (
+              <>
+                <div className="flex flex-wrap gap-1.5">
+                  {[5, 10, 25, 50, 100, 250].map((km) => (
+                    <button
+                      key={km}
+                      onClick={() => { onSetNearbyRadius?.(km); onSetFilterMode("nearby"); }}
+                      className={`px-2.5 py-1 rounded-md text-[11px] ${filterMode === "nearby" && nearbyRadius === km ? "bg-[var(--theme-color)] text-white font-bold" : "bg-muted text-neutral-300"}`}
+                    >
+                      {km} km
+                    </button>
+                  ))}
+                </div>
+                <button onClick={locate} disabled={locating} className="text-[11px] text-[var(--theme-color)] hover:underline">
+                  {locating ? "Updating…" : "Refresh my location"}
+                </button>
+              </>
+            )}
+            {locError && <p className="text-[11px] text-red-400">{locError}</p>}
+          </div>
+
           {/* Main 3 Modes */}
           <div className="space-y-2">
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block">
