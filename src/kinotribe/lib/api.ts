@@ -1,3 +1,4 @@
+import { getSavedLocation, type GeoLocation } from "./geo";
 import { supabase } from "@/integrations/supabase/client";
 import { MOCK_USERS, MOCK_POSTS, MOCK_STORIES } from "../data/mockCinemaData";
 import type {
@@ -387,6 +388,9 @@ export async function loadEverything(currentUserId: string): Promise<FeedData> {
         portfolioRole: p.portfolio_role ?? undefined,
         tags: p.tags ?? [],
         taggedUsers: (p.content as any)?.taggedUsers ?? (p as any).tagged_users ?? undefined,
+        latitude: (p as any).latitude ?? undefined,
+        longitude: (p as any).longitude ?? undefined,
+        city: (p as any).city ?? undefined,
       } as Post;
     });
 
@@ -643,6 +647,7 @@ export async function createPost(post: Post, userId: string) {
   setGuestStore("cinetribe_guest_posts", [newPost, ...posts.filter((p) => p.id !== newPost.id)]);
 
   if (!isGuestId(userId)) {
+    const gps = getSavedLocation();
     try {
       const postContent = {
         ...post.content,
@@ -661,6 +666,9 @@ export async function createPost(post: Post, userId: string) {
         tags: post.tags,
         is_portfolio: post.isPortfolio ?? false,
         portfolio_role: post.portfolioRole ?? null,
+        latitude: gps?.latitude ?? null,
+        longitude: gps?.longitude ?? null,
+        city: gps?.city ?? null,
       });
     } catch (err) {
       console.warn("Supabase post sync issue, safely kept in local storage:", err);
@@ -1032,4 +1040,13 @@ export async function getMyProfile(userId: string): Promise<User | null> {
       joinedDate: "Joined recently",
     };
   }
+}
+
+export async function saveMyLocation(userId: string, loc: GeoLocation) {
+  const patch: Record<string, unknown> = { latitude: loc.latitude, longitude: loc.longitude };
+  if (loc.city) patch.city = loc.city;
+  if (loc.country) patch.country = loc.country;
+  if (loc.countryCode) patch.country_code = loc.countryCode;
+  const { error } = await supabase.from("profiles").update(patch as never).eq("id", userId);
+  if (error) console.warn("Could not save location", error);
 }
