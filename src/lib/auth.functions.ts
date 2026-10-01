@@ -28,7 +28,7 @@ export const loginWithIdentifier = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const email = await resolveEmail(data.identifier);
     if (!email) return { error: "Incorrect username, phone, email or password." };
-    const client = createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_PUBLISHABLE_KEY"]!, {
+    const client = createClient(process.env["SUPABASE_URL"]!, (process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"])!, {
       auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
     });
     const { data: res, error } = await client.auth.signInWithPassword({ email, password: data.password });
