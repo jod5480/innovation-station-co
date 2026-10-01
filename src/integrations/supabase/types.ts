@@ -587,7 +587,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_phone_available: { Args: { _phone: string }; Returns: boolean }
       is_username_available: { Args: { _username: string }; Returns: boolean }
     }
     Enums: {
