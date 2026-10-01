@@ -82,6 +82,9 @@ export const AuthGate: React.FC = () => {
           },
         });
         if (error) throw error;
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          throw new Error("An account with this email already exists. Log in, or tap \"Forgot password?\" to set a new password.");
+        }
         if (!data.session) {
           setInfo(`We sent a confirmation link to ${email}. Open it to activate your account, then log in.`);
           setMode("login");
