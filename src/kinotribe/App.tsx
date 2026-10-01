@@ -1715,8 +1715,9 @@ function KinoApp({
           setIsRegionFilterOpen(true);
         }}
         onLogout={async () => {
-          if (confirm("Sign out of Cinetribe?")) {
-            localStorage.removeItem("cinetribe_guest");
+          if (confirm("Log out of Cinetribe?")) {
+            setIsSettingsOpen(false);
+            await supabase.auth.signOut();
             if (onSignOut) onSignOut();
           }
         }}
