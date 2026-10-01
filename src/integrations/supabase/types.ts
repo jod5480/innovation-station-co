@@ -553,11 +553,41 @@ export type Database = {
           },
         ]
       }
+      user_contacts: {
+        Row: {
+          created_at: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_contacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      is_phone_available: { Args: { _phone: string }; Returns: boolean }
       is_username_available: { Args: { _username: string }; Returns: boolean }
     }
     Enums: {
