@@ -490,7 +490,10 @@ export async function loadEverything(currentUserId: string): Promise<FeedData> {
     const mergedPosts: Post[] = [];
 
     // 1. Locally stored / newly created posts (top priority, newest first)
-    for (const p of storedPosts) {
+    if (!isGuest && typeof window !== "undefined") {
+      try { localStorage.removeItem("cinetribe_guest_posts"); } catch { /* ignore */ }
+    }
+    for (const p of isGuest ? storedPosts : []) {
       if (!postIds.has(p.id) && !isMockPost(p.id)) {
         postIds.add(p.id);
         mergedPosts.push(p);
@@ -641,41 +644,38 @@ export async function addComment(postId: string, userId: string, text: string) {
 }
 
 export async function createPost(post: Post, userId: string) {
-  // Always immediately save post locally so it appears on the feed and is NEVER lost
-  const posts = getGuestStore<Post[]>("cinetribe_guest_posts", []);
   const newPost: Post = { ...post, id: post.id || `post_${Date.now()}`, authorId: userId };
-  setGuestStore("cinetribe_guest_posts", [newPost, ...posts.filter((p) => p.id !== newPost.id)]);
-
-  if (!isGuestId(userId)) {
-    const gps = getSavedLocation();
-    try {
-      const postContent = {
-        ...post.content,
-        ...(post.taggedUsers && post.taggedUsers.length > 0
-          ? { taggedUsers: post.taggedUsers }
-          : {}),
-      };
-      await supabase.from("posts").insert({
-        author_id: userId,
-        type: post.type,
-        content: postContent,
-        casting_details: (post.castingDetails ?? null) as never,
-        country: post.country,
-        country_code: post.countryCode,
-        language: post.language,
-        tags: post.tags,
-        is_portfolio: post.isPortfolio ?? false,
-        portfolio_role: post.portfolioRole ?? null,
-        latitude: gps?.latitude ?? null,
-        longitude: gps?.longitude ?? null,
-        city: gps?.city ?? null,
-      });
-    } catch (err) {
-      console.warn("Supabase post sync issue, safely kept in local storage:", err);
-    }
+  if (isGuestId(userId)) {
+    const posts = getGuestStore<Post[]>("cinetribe_guest_posts", []);
+    setGuestStore("cinetribe_guest_posts", [newPost, ...posts.filter((p) => p.id !== newPost.id)]);
+    return newPost;
   }
-
-  return newPost;
+  const gps = getSavedLocation();
+  const postContent = {
+    ...post.content,
+    ...(post.taggedUsers && post.taggedUsers.length > 0 ? { taggedUsers: post.taggedUsers } : {}),
+  };
+  const { data, error } = await supabase
+    .from("posts")
+    .insert({
+      author_id: userId,
+      type: post.type,
+      content: postContent,
+      casting_details: (post.castingDetails ?? null) as never,
+      country: post.country,
+      country_code: post.countryCode,
+      language: post.language,
+      tags: post.tags,
+      is_portfolio: post.isPortfolio ?? false,
+      portfolio_role: post.portfolioRole ?? null,
+      latitude: gps?.latitude ?? null,
+      longitude: gps?.longitude ?? null,
+      city: gps?.city ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return { ...newPost, id: data.id };
 }
 
 export async function deletePost(postId: string, userId: string) {
