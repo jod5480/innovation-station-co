@@ -75,9 +75,16 @@ export default function App() {
 
   useEffect(() => {
     localStorage.removeItem("cinetribe_guest");
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ? { userId: data.session.user.id } : null);
-    });
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return setSession(null);
+      // Make sure the saved login still belongs to an existing account
+      const { data: u, error } = await supabase.auth.getUser();
+      if (error || !u.user) {
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+        return setSession(null);
+      }
+      setSession({ userId: u.user.id });
+    }).catch(() => setSession(null));
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       if (event === "PASSWORD_RECOVERY") {
         window.location.href = "/reset-password";
