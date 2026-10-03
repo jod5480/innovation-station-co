@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { User, Post, Application, CinemaRole, ExperienceLevel } from "../../types";
+import { uploadMedia } from "../../lib/api";
 import {
   CheckCircle2,
   Film,
@@ -102,24 +103,32 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [bannerPreview, setBannerPreview] = useState(user.coverImage || "");
   const bannerInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const objectUrl = URL.createObjectURL(file);
     setBannerPreview(objectUrl);
-    setEditBannerUrl(objectUrl);
-    // Immediately persist the banner so it shows on profile
-    onUpdateProfile({ ...user, coverImage: objectUrl });
+    try {
+      const url = await uploadMedia(file);
+      setBannerPreview(url);
+      setEditBannerUrl(url);
+      onUpdateProfile({ ...user, coverImage: url });
+    } catch (err) {
+      alert("Could not upload banner: " + (err as Error).message);
+    }
   };
 
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const objectUrl = URL.createObjectURL(file);
-    // Immediately persist the avatar so it shows on profile
-    onUpdateProfile({ ...user, avatar: objectUrl });
+    try {
+      const url = await uploadMedia(file);
+      onUpdateProfile({ ...user, avatar: url });
+    } catch (err) {
+      alert("Could not upload photo: " + (err as Error).message);
+    }
   };
 
   // Edit state
