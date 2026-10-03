@@ -38,7 +38,8 @@ const THEMES = [
   { name: "Ocean", color: "#0095F6", hover: "#1877F2" },
   { name: "Emerald", color: "#10B981", hover: "#059669" },
   { name: "Amethyst", color: "#8B5CF6", hover: "#7C3AED" },
-  { name: "Amber", color: "#F59E0B", hover: "#D97706" }
+  { name: "Amber", color: "#F59E0B", hover: "#D97706" },
+  { name: "Mono", color: "#8A8A8A", hover: "#5C5C5C" }
 ];
 import { ALL_ROLES, COUNTRIES_DATA } from "../../data/mockCinemaData";
 
@@ -964,7 +965,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                         <div 
                           className={`w-10 h-10 rounded-full flex items-center justify-center border-[3px] transition-all`}
                           style={{ 
-                            backgroundColor: theme.color, 
+                            background: theme.name === "Mono" ? "linear-gradient(135deg, #FFFFFF 50%, #000000 50%)" : theme.color, 
                             borderColor: editTheme === theme.color ? 'white' : 'transparent',
                             boxShadow: editTheme === theme.color ? `0 0 15px ${theme.color}60` : 'none'
                           }}
