@@ -1,6 +1,6 @@
 {
-  "name": "KinoTribe",
-  "short_name": "KinoTribe",
+  "name": "Cinetribe",
+  "short_name": "Cinetribe",
   "description": "The social network for filmmakers",
   "start_url": "/",
   "display": "standalone",
