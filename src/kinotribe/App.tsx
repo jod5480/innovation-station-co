@@ -190,6 +190,33 @@ function KinoApp({
   const [activeTab, setActiveTab] = useState<MainTab>("feed");
   const [viewedProfileUser, setViewedProfileUser] = useState<User>(CURRENT_USER);
 
+  // Android back button: go home first, double-press to exit
+  const activeTabRef = React.useRef(activeTab);
+  activeTabRef.current = activeTab;
+  const [exitHint, setExitHint] = useState(false);
+  useEffect(() => {
+    let lastBack = 0;
+    window.history.pushState({ ctGuard: true }, "");
+    const onPop = () => {
+      if (activeTabRef.current !== "feed") {
+        setActiveTab("feed");
+        window.history.pushState({ ctGuard: true }, "");
+        return;
+      }
+      const now = Date.now();
+      if (now - lastBack < 2000) {
+        window.history.back();
+        return;
+      }
+      lastBack = now;
+      setExitHint(true);
+      setTimeout(() => setExitHint(false), 2000);
+      window.history.pushState({ ctGuard: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   // Region & Language Feed Filters
   const [feedMode, setFeedMode] = useState<FeedFilterMode>("global");
   const [activeBrowseCountry, setActiveBrowseCountry] = useState<string>(CURRENT_USER.country);
