@@ -491,7 +491,7 @@ export async function loadEverything(currentUserId: string): Promise<FeedData> {
 
     // 1. Locally stored / newly created posts (top priority, newest first)
     if (!isGuest && typeof window !== "undefined") {
-      try { localStorage.removeItem("cinetribe_guest_posts"); } catch { /* ignore */ }
+      try { localStorage.removeItem("cinetribe_guest_posts"); localStorage.removeItem("cinetribe_guest_stories"); } catch { /* ignore */ }
     }
     for (const p of isGuest ? storedPosts : []) {
       if (!postIds.has(p.id) && !isMockPost(p.id)) {
@@ -509,7 +509,7 @@ export async function loadEverything(currentUserId: string): Promise<FeedData> {
     }
 
     const isMockStory = (id: string) => MOCK_STORIES.some((m) => m.id === id);
-    const cleanStoredStories = storedStories.filter((s) => !isMockStory(s.id));
+    const cleanStoredStories = (isGuest ? storedStories : []).filter((s) => !isMockStory(s.id));
     const mergedStories = [
       ...cleanStoredStories,
       ...stories.filter(
@@ -732,8 +732,20 @@ export async function createStory(
   roleBadge: string,
   linkedPostId?: string,
 ) {
-  const stories = getGuestStore<StoryItem[]>("cinetribe_guest_stories", []);
   const now = new Date().toISOString();
+  if (!isGuestId(userId)) {
+    const encodedCaption = linkedPostId
+      ? `${caption} [linked_post:${linkedPostId}]`.trim()
+      : caption;
+    const { data, error } = await supabase
+      .from("stories")
+      .insert({ author_id: userId, media_url: mediaUrl, caption: encodedCaption, role_badge: roleBadge })
+      .select("id, created_at")
+      .single();
+    if (error) throw new Error(error.message || "Could not share your Glimpse.");
+    return { id: data.id, mediaUrl, caption, roleBadge: roleBadge as CinemaRole, timestamp: "Just now", createdAt: data.created_at, linkedPostId } as StoryItem;
+  }
+  const stories = getGuestStore<StoryItem[]>("cinetribe_guest_stories", []);
   const newStory: StoryItem = {
     id: `story_${Date.now()}`,
     author: GUEST_USER,
@@ -744,40 +756,7 @@ export async function createStory(
     createdAt: now,
     linkedPostId,
   };
-  setGuestStore("cinetribe_guest_stories", [
-    newStory,
-    ...stories.filter((s) => s.id !== newStory.id),
-  ]);
-
-  if (!isGuestId(userId)) {
-    try {
-      const encodedCaption = linkedPostId
-        ? `${caption} [linked_post:${linkedPostId}]`.trim()
-        : caption;
-      const res = await supabase
-        .from("stories")
-        .insert({
-          author_id: userId,
-          media_url: mediaUrl,
-          caption: encodedCaption,
-          role_badge: roleBadge,
-          linked_post_id: linkedPostId,
-        } as any)
-        .select()
-        .single();
-      if (res.error && res.error.message?.includes("linked_post_id")) {
-        await supabase.from("stories").insert({
-          author_id: userId,
-          media_url: mediaUrl,
-          caption: encodedCaption,
-          role_badge: roleBadge,
-        } as any);
-      }
-    } catch (err) {
-      console.warn("Supabase story sync issue, safely kept in local storage:", err);
-    }
-  }
-
+  setGuestStore("cinetribe_guest_stories", [newStory, ...stories]);
   return newStory;
 }
 

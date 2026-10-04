@@ -314,6 +314,7 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
       setMode("preview");
     } catch (err) {
       console.error("Gallery select error:", err);
+      alert(err instanceof Error ? err.message : "Could not upload that file");
     }
   };
 
@@ -391,7 +392,12 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
     if (isPublishing) return;
     setIsPublishing(true);
     try {
-      const finalUrl = await getFinalStoryImage();
+      let finalUrl = (await getFinalStoryImage()) as string;
+      if (finalUrl && finalUrl.startsWith("data:")) {
+        const blob = await (await fetch(finalUrl)).blob();
+        const ext = blob.type.includes("video") ? "mp4" : "jpg";
+        finalUrl = await uploadMedia(new File([blob], `glimpse.${ext}`, { type: blob.type || "image/jpeg" }));
+      }
       const caption = storyText || (activeSticker ? `${activeSticker}` : "Glimpse");
       await onStoryCreated(finalUrl, caption, roleBadge, embeddedPost?.id);
       onClose();
