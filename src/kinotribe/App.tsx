@@ -1708,6 +1708,20 @@ function KinoApp({
         currentUser={currentUser}
         onSendMessage={handleSendMessage}
         onUserClick={handleUserClick}
+        onMarkRead={(convId: string) => {
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.conversationId === convId
+                ? {
+                    ...c,
+                    unreadCount: 0,
+                    messages: c.messages.map((m) => ({ ...m, read: true })),
+                  }
+                : c,
+            ),
+          );
+          api.markConversationRead(convId, currentUser.id).catch(() => {});
+        }}
         myApplications={myApplications}
         receivedApplications={receivedApplications}
         onUpdateApplicationStatus={handleUpdateApplicationStatus}

@@ -28,6 +28,7 @@ interface DirectMessagesDrawerProps {
     applicantId?: string,
     projectTitle?: string,
   ) => void;
+  onMarkRead?: (conversationId: string) => void;
 }
 
 export const DirectMessagesDrawer: React.FC<DirectMessagesDrawerProps> = ({
@@ -41,6 +42,7 @@ export const DirectMessagesDrawer: React.FC<DirectMessagesDrawerProps> = ({
   myApplications = [],
   receivedApplications = [],
   onUpdateApplicationStatus,
+  onMarkRead,
 }) => {
   if (!isOpen) return null;
 
@@ -71,6 +73,7 @@ export const DirectMessagesDrawer: React.FC<DirectMessagesDrawerProps> = ({
   const handleConvClick = (convId: string) => {
     setSelectedConvId(convId);
     setReadConvs((prev) => new Set(prev).add(convId));
+    onMarkRead?.(convId);
   };
 
   // Filter conversations by Search and Tab
@@ -301,8 +304,7 @@ export const DirectMessagesDrawer: React.FC<DirectMessagesDrawerProps> = ({
                 <div className="mt-2 space-y-0.5 px-2">
                   {filteredConversations.length > 0 ? (
                     filteredConversations.map((c, idx) => {
-                      // Mocking first conversation as unread until clicked
-                      const isUnread = idx === 0 && !readConvs.has(c.conversationId);
+                      const isUnread = c.unreadCount > 0 && !readConvs.has(c.conversationId);
 
                       return (
                         <button
