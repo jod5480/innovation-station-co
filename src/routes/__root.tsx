@@ -75,6 +75,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
+      { name: "theme-color", content: "#000000" },
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Cinetribe" },
