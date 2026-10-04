@@ -190,6 +190,33 @@ function KinoApp({
   const [activeTab, setActiveTab] = useState<MainTab>("feed");
   const [viewedProfileUser, setViewedProfileUser] = useState<User>(CURRENT_USER);
 
+  // Android back button: go home first, double-press to exit
+  const activeTabRef = React.useRef(activeTab);
+  activeTabRef.current = activeTab;
+  const [exitHint, setExitHint] = useState(false);
+  useEffect(() => {
+    let lastBack = 0;
+    window.history.pushState({ ctGuard: true }, "");
+    const onPop = () => {
+      if (activeTabRef.current !== "feed") {
+        setActiveTab("feed");
+        window.history.pushState({ ctGuard: true }, "");
+        return;
+      }
+      const now = Date.now();
+      if (now - lastBack < 2000) {
+        window.history.back();
+        return;
+      }
+      lastBack = now;
+      setExitHint(true);
+      setTimeout(() => setExitHint(false), 2000);
+      window.history.pushState({ ctGuard: true }, "");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   // Region & Language Feed Filters
   const [feedMode, setFeedMode] = useState<FeedFilterMode>("global");
   const [activeBrowseCountry, setActiveBrowseCountry] = useState<string>(CURRENT_USER.country);
@@ -944,6 +971,11 @@ function KinoApp({
         isMobileFrameView ? "h-screen max-h-screen overflow-hidden" : "min-h-screen min-h-[100dvh]"
       } bg-black text-[#FAF9F5] selection:bg-[var(--theme-color)] selection:text-[#FAF9F5] flex flex-col font-sans transition-colors duration-200 antialiased`}
     >
+      {exitHint && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full bg-neutral-800 text-white text-sm shadow-lg">
+          Press back again to exit
+        </div>
+      )}
       {/* Top Desktop Control Bar when Phone Preview is active */}
       {!isMobileDevice && isMobileFrameView && (
         <div className="w-full pt-2 pb-1 px-4 flex items-center justify-center shrink-0 z-30">
