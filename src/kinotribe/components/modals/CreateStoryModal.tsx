@@ -234,7 +234,7 @@ export const CreateStoryModal: React.FC<CreateStoryModalProps> = ({
         if (ctx) {
           const grad = ctx.createLinearGradient(0, 0, 1080, 1920);
           grad.addColorStop(0, "#000000");
-          const themeColor = getComputedStyle(document.documentElement).getPropertyValue("--theme-color").trim() || "#DC143C";
+          const themeColor = getComputedStyle(document.documentElement).getPropertyValue("--theme-color").trim() || "#FFFFFF";
           grad.addColorStop(1, themeColor);
           ctx.fillStyle = grad;
           ctx.fillRect(0, 0, 1080, 1920);
