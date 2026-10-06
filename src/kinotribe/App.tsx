@@ -245,11 +245,11 @@ function KinoApp({
   useEffect(() => {
     document.documentElement.classList.add("dark");
     
-    // Load preferred theme if exists
-    const savedColor = localStorage.getItem("app_theme_color");
-    const savedHover = localStorage.getItem("app_theme_hover");
-    if (savedColor) document.documentElement.style.setProperty("--theme-color", savedColor);
-    if (savedHover) document.documentElement.style.setProperty("--theme-hover", savedHover);
+    // Single black & white theme — clear any old saved colour
+    localStorage.removeItem("app_theme_color");
+    localStorage.removeItem("app_theme_hover");
+    document.documentElement.style.removeProperty("--theme-color");
+    document.documentElement.style.removeProperty("--theme-hover");
   }, []);
 
   // Modals state
