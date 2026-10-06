@@ -887,7 +887,7 @@ function KinoApp({
           <div
             className={`w-9 h-8 rounded-[12px] flex items-center justify-center shadow-md transition-all duration-200 ${
               activeTab === "casting"
-                ? "bg-gradient-to-tr from-[var(--theme-color)] to-[#000000] text-foreground shadow-[var(--theme-color)]/40"
+                ? "bg-[var(--theme-color)] text-black shadow-[var(--theme-color)]/40"
                 : "bg-muted hover:bg-black/20 text-neutral-300 border border-white/15"
             }`}
           >
