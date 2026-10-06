@@ -553,6 +553,207 @@ export type Database = {
           },
         ]
       }
+      tribe_charges: {
+        Row: {
+          created_at: string
+          reply_id: string | null
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          reply_id?: string | null
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          reply_id?: string | null
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribe_charges_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: false
+            referencedRelation: "tribe_replies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribe_charges_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "tribe_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribe_charges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tribe_members: {
+        Row: {
+          created_at: string
+          tribe_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          tribe_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          tribe_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribe_members_tribe_id_fkey"
+            columns: ["tribe_id"]
+            isOneToOne: false
+            referencedRelation: "tribes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribe_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tribe_replies: {
+        Row: {
+          author_id: string
+          charge_count: number
+          created_at: string
+          id: string
+          text: string
+          thread_id: string
+        }
+        Insert: {
+          author_id: string
+          charge_count?: number
+          created_at?: string
+          id?: string
+          text: string
+          thread_id: string
+        }
+        Update: {
+          author_id?: string
+          charge_count?: number
+          created_at?: string
+          id?: string
+          text?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribe_replies_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribe_replies_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "tribe_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tribe_threads: {
+        Row: {
+          author_id: string
+          body: string
+          charge_count: number
+          created_at: string
+          id: string
+          reply_count: number
+          title: string
+          tribe_id: string
+        }
+        Insert: {
+          author_id: string
+          body?: string
+          charge_count?: number
+          created_at?: string
+          id?: string
+          reply_count?: number
+          title: string
+          tribe_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          charge_count?: number
+          created_at?: string
+          id?: string
+          reply_count?: number
+          title?: string
+          tribe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribe_threads_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribe_threads_tribe_id_fkey"
+            columns: ["tribe_id"]
+            isOneToOne: false
+            referencedRelation: "tribes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tribes: {
+        Row: {
+          created_at: string
+          creator_id: string
+          description: string
+          id: string
+          member_count: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          description?: string
+          id?: string
+          member_count?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          description?: string
+          id?: string
+          member_count?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribes_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_contacts: {
         Row: {
           created_at: string
