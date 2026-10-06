@@ -167,7 +167,7 @@ export const CommentsSheet: React.FC<CommentsSheetProps> = ({
           <button
             type="submit"
             disabled={!newCommentText.trim()}
-            className="px-3.5 py-2 rounded-full bg-gradient-to-r from-[var(--theme-color)] to-[var(--theme-color)] hover:brightness-110 disabled:opacity-40 text-foreground font-bold text-xs flex items-center gap-1 transition-all active:scale-95 shadow-md shadow-[var(--theme-color)]/20"
+            className="px-3.5 py-2 rounded-full bg-[var(--theme-color)] hover:brightness-110 disabled:opacity-40 text-foreground font-bold text-xs flex items-center gap-1 transition-all active:scale-95 shadow-md shadow-[var(--theme-color)]/20"
           >
             <Send className="w-3 h-3" />
           </button>

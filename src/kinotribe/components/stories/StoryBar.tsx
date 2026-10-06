@@ -77,7 +77,7 @@ export const StoryBar: React.FC<StoryBarProps> = ({
               hapticMedium();
               onOpenCreateStory?.();
             }}
-            className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gradient-to-r from-[var(--theme-color)] to-[var(--theme-color)] text-foreground flex items-center justify-center border-2 border-black font-bold shadow-md hover:scale-110 active:scale-90 transition-transform z-10"
+            className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[var(--theme-color)] text-foreground flex items-center justify-center border-2 border-black font-bold shadow-md hover:scale-110 active:scale-90 transition-transform z-10"
             title="Add your Glimpse"
           >
             <Plus className="w-3 h-3 stroke-[3]" />
