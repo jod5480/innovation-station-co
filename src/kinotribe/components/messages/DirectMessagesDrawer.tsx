@@ -390,7 +390,7 @@ export const DirectMessagesDrawer: React.FC<DirectMessagesDrawerProps> = ({
                     <div
                       className={`max-w-[75%] px-4 py-2.5 text-[14px] leading-relaxed ${
                         isMe
-                          ? "bg-gradient-to-br from-[var(--theme-color)] to-[var(--theme-color)] text-foreground rounded-[20px] rounded-br-sm shadow-md shadow-[var(--theme-color)]/25"
+                          ? "bg-[var(--theme-color)] text-foreground rounded-[20px] rounded-br-sm shadow-md shadow-[var(--theme-color)]/25"
                           : "apple-glass-subtle text-foreground rounded-[20px] rounded-bl-sm border border-border"
                       }`}
                     >
@@ -411,7 +411,7 @@ export const DirectMessagesDrawer: React.FC<DirectMessagesDrawerProps> = ({
             >
               <button
                 type="button"
-                className="p-2.5 bg-gradient-to-br from-[var(--theme-color)] to-[var(--theme-color)] shadow-md shadow-[var(--theme-color)]/30 rounded-full text-foreground shrink-0 active:scale-95 transition-transform"
+                className="p-2.5 bg-[var(--theme-color)] shadow-md shadow-[var(--theme-color)]/30 rounded-full text-foreground shrink-0 active:scale-95 transition-transform"
               >
                 <Camera className="w-5 h-5" fill="currentColor" />
               </button>

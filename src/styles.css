@@ -934,3 +934,15 @@ button:active {
 .cinema-btn-outline:hover {
   color: #000000 !important;
 }
+
+/* Ensure icons/text on solid white theme fills are black */
+[class~="bg-[var(--theme-color)]"] *,
+[class~="bg-[var(--theme-color)]"] svg {
+  color: #000000 !important;
+}
+[class*="bg-purple-"],[class*="bg-emerald-"],[class*="bg-blue-"],[class*="bg-red-"],[class*="bg-orange-"],[class*="bg-amber-"],[class*="bg-pink-"],[class*="bg-rose-"],[class*="bg-indigo-"] {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+[class*="text-purple-"],[class*="text-emerald-"],[class*="text-blue-"],[class*="text-orange-"],[class*="text-amber-"],[class*="text-pink-"],[class*="text-rose-"],[class*="text-indigo-"] {
+  color: #ffffff !important;
+}

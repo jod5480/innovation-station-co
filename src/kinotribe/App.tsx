@@ -781,7 +781,7 @@ function KinoApp({
                 setCreateInitialMode("regular");
                 setIsCreateOpen(true);
               }}
-              className="w-8 h-8 rounded-full bg-gradient-to-r from-[var(--theme-color)] to-[var(--theme-color)] text-foreground font-bold flex items-center justify-center active:scale-95 transition-all opacity-90"
+              className="w-8 h-8 rounded-full bg-[var(--theme-color)] text-foreground font-bold flex items-center justify-center active:scale-95 transition-all opacity-90"
               title="Create Post or Story"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
@@ -1145,10 +1145,10 @@ function KinoApp({
                 setCreateInitialMode("regular");
                 setIsCreateOpen(true);
               }}
-              className="relative flex items-center justify-center h-8 px-3.5 rounded-full bg-gradient-to-r from-[var(--theme-color)] to-[var(--theme-color)] text-foreground font-bold text-xs active:scale-95 transition-all hover:brightness-110 border border-border opacity-90"
+              className="relative flex items-center justify-center h-8 px-3.5 rounded-full bg-[var(--theme-color)] text-foreground font-bold text-xs active:scale-95 transition-all hover:brightness-110 border border-border opacity-90"
               title="Create Post or Casting Call"
             >
-              <Plus className="w-4 h-4 stroke-[2.8] text-foreground" />
+              <Plus className="w-4 h-4 stroke-[2.8] text-black" />
               <span className="ml-1 hidden sm:inline font-bold">Post</span>
             </button>
 
@@ -1296,7 +1296,7 @@ function KinoApp({
                               setCreateInitialMode("regular");
                               setIsCreateOpen(true);
                             }}
-                            className="px-4 py-2 rounded-full bg-gradient-to-r from-[var(--theme-color)] to-[var(--theme-color)] text-foreground font-bold text-xs shadow-lg shadow-[var(--theme-color)]/25 transition-all hover:brightness-110 active:scale-95 flex items-center gap-1.5"
+                            className="px-4 py-2 rounded-full bg-[var(--theme-color)] text-foreground font-bold text-xs shadow-lg shadow-[var(--theme-color)]/25 transition-all hover:brightness-110 active:scale-95 flex items-center gap-1.5"
                           >
                             <Plus className="w-3.5 h-3.5" />
                             <span>Create First Post</span>
@@ -1510,7 +1510,7 @@ function KinoApp({
                               </div>
                               <button
                                 onClick={() => setActivePostForApply(p)}
-                                className="w-full py-1.5 rounded-lg bg-gradient-to-r from-[var(--theme-color)] to-[var(--theme-color)] hover:brightness-110 text-foreground font-bold text-[11px] transition-all shadow-sm active:scale-95"
+                                className="w-full py-1.5 rounded-lg bg-[var(--theme-color)] hover:brightness-110 text-foreground font-bold text-[11px] transition-all shadow-sm active:scale-95"
                               >
                                 Apply Now
                               </button>
