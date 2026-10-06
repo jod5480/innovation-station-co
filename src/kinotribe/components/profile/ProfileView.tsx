@@ -948,37 +948,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   Preferences
                 </p>
 
-                {/* App Theme */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <Palette className="w-4 h-4 text-neutral-300" />
-                    <p className="text-[13px] font-semibold text-neutral-300">App Theme</p>
-                  </div>
-                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                    {THEMES.map((theme) => (
-                      <button
-                        key={theme.name}
-                        type="button"
-                        onClick={() => applyTheme(theme)}
-                        className={`flex flex-col items-center gap-1.5 shrink-0 transition-transform active:scale-95`}
-                      >
-                        <div 
-                          className={`w-10 h-10 rounded-full flex items-center justify-center border-[3px] transition-all`}
-                          style={{ 
-                            background: theme.name === "Mono" ? "linear-gradient(135deg, #FFFFFF 50%, #000000 50%)" : theme.color, 
-                            borderColor: editTheme === theme.color ? 'white' : 'transparent',
-                            boxShadow: editTheme === theme.color ? `0 0 15px ${theme.color}60` : 'none'
-                          }}
-                        >
-                          {editTheme === theme.color && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
-                        </div>
-                        <span className={`text-[10px] font-semibold ${editTheme === theme.color ? 'text-white' : 'text-neutral-500'}`}>
-                          {theme.name}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
                 {/* Experience Level */}
                 <p className="text-[13px] font-semibold text-neutral-300 mb-2">Experience Level</p>

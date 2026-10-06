@@ -62,8 +62,8 @@
 }
 
 :root {
-  --theme-color: #DC143C;
-  --theme-hover: #A40F2D;
+  --theme-color: #FFFFFF;
+  --theme-hover: #E5E5E5;
   --radius: 0.625rem;
   --background: oklch(1 0 0); /* White */
   --foreground: oklch(0.1 0 0); /* Almost Black */
@@ -71,69 +71,69 @@
   --card-foreground: oklch(0.1 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.1 0 0);
-  --primary: oklch(0.55 0.25 25); /* Crimson Red */
-  --primary-foreground: oklch(1 0 0); /* White */
+  --primary: oklch(1 0 0); /* Crimson Red */
+  --primary-foreground: oklch(0 0 0); /* White */
   --secondary: oklch(0.9 0 0); /* Light Gray */
   --secondary-foreground: oklch(0.1 0 0);
   --muted: oklch(0.95 0 0);
   --muted-foreground: oklch(0.4 0 0);
-  --accent: oklch(0.55 0.25 25); /* Crimson Red */
-  --accent-foreground: oklch(1 0 0); /* White */
-  --destructive: oklch(0.55 0.25 25);
+  --accent: oklch(1 0 0); /* Crimson Red */
+  --accent-foreground: oklch(0 0 0); /* White */
+  --destructive: oklch(1 0 0);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
-  --ring: oklch(0.55 0.25 25);
-  --chart-1: oklch(0.55 0.25 25);
+  --ring: oklch(1 0 0);
+  --chart-1: oklch(1 0 0);
   --chart-2: oklch(0.1 0 0);
   --chart-3: oklch(0.3 0 0);
   --chart-4: oklch(0.5 0 0);
   --chart-5: oklch(0.7 0 0);
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.1 0 0);
-  --sidebar-primary: oklch(0.55 0.25 25);
+  --sidebar-primary: oklch(1 0 0);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.9 0 0);
   --sidebar-accent-foreground: oklch(0.1 0 0);
   --sidebar-border: oklch(0.9 0 0);
-  --sidebar-ring: oklch(0.55 0.25 25);
+  --sidebar-ring: oklch(1 0 0);
 }
 
 .dark {
-  --theme-color: #DC143C;
-  --theme-hover: #A40F2D;
+  --theme-color: #FFFFFF;
+  --theme-hover: #E5E5E5;
   --background: oklch(0 0 0); /* Pure Black */
   --foreground: oklch(1 0 0); /* White */
   --card: oklch(0.1 0 0); /* Dark Gray */
   --card-foreground: oklch(1 0 0);
   --popover: oklch(0.1 0 0);
   --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.55 0.25 25); /* Crimson Red */
-  --primary-foreground: oklch(1 0 0); /* White */
+  --primary: oklch(1 0 0); /* Crimson Red */
+  --primary-foreground: oklch(0 0 0); /* White */
   --secondary: oklch(0.2 0 0); /* Darker Gray */
   --secondary-foreground: oklch(1 0 0);
   --muted: oklch(0.15 0 0);
   --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.55 0.25 25); /* Crimson Red */
-  --accent-foreground: oklch(1 0 0); /* White */
-  --destructive: oklch(0.55 0.25 25);
+  --accent: oklch(1 0 0); /* Crimson Red */
+  --accent-foreground: oklch(0 0 0); /* White */
+  --destructive: oklch(1 0 0);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.2 0 0);
   --input: oklch(0.2 0 0);
-  --ring: oklch(0.55 0.25 25);
-  --chart-1: oklch(0.55 0.25 25);
+  --ring: oklch(1 0 0);
+  --chart-1: oklch(1 0 0);
   --chart-2: oklch(1 0 0);
   --chart-3: oklch(0.8 0 0);
   --chart-4: oklch(0.6 0 0);
   --chart-5: oklch(0.4 0 0);
   --sidebar: oklch(0 0 0);
   --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.55 0.25 25);
+  --sidebar-primary: oklch(1 0 0);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.2 0 0);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.2 0 0);
-  --sidebar-ring: oklch(0.55 0.25 25);
+  --sidebar-ring: oklch(1 0 0);
 }
 
 @layer base {
@@ -163,9 +163,9 @@
     --font-mono-ios: "SF Mono", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
 
     /* Now Playing Cinema Orange & Midnight Slate Theme System (Dark Mode First) */
-    --cinema-orange: #DC143C;
-    --cinema-orange-hover: #A40F2D;
-    --cinema-orange-light: #DC143C;
+    --cinema-orange: #FFFFFF;
+    --cinema-orange-hover: #E5E5E5;
+    --cinema-orange-light: #FFFFFF;
     --cinema-amber: #000000;
     --cinema-amber-hover: #f59e0b;
     --cinema-dark: #000000;
@@ -174,20 +174,20 @@
     --cinema-secondary: #94a3b8;
 
     /* Semantic Theme Aliases */
-    --gold-yellow: #DC143C;
-    --gold-yellow-bright: #DC143C;
-    --gold-yellow-hover: #A40F2D;
+    --gold-yellow: #FFFFFF;
+    --gold-yellow-bright: #FFFFFF;
+    --gold-yellow-hover: #E5E5E5;
     --fluorescent-green: #000000;
     --fluorescent-green-hover: #f59e0b;
 
-    --monsoon-blue: #DC143C;
-    --monsoon-blue-hover: #A40F2D;
+    --monsoon-blue: #FFFFFF;
+    --monsoon-blue-hover: #E5E5E5;
     --monsoon-azure: #000000;
     --monsoon-dark: #000000;
     --monsoon-card: #121212;
     --monsoon-secondary: #94a3b8;
 
-    --tiktok-red: #DC143C;
+    --tiktok-red: #FFFFFF;
     --tiktok-cyan: #000000;
     --tiktok-black: #000000;
     --tiktok-card: #121212;
@@ -227,50 +227,50 @@
 /* Now Playing — Cinema Orange & Golden Amber Brand Aesthetics */
 .cinema-orange-glow {
   text-shadow:
-    0 0 12px rgba(255, 107, 0, 0.65),
-    0 0 24px rgba(255, 133, 51, 0.4);
+    0 0 12px rgba(255, 255, 255, 0.65),
+    0 0 24px rgba(255, 255, 255, 0.4);
 }
 
 .cinema-amber-glow {
   text-shadow:
-    0 0 12px rgba(255, 184, 0, 0.65),
-    0 0 24px rgba(255, 184, 0, 0.4);
+    0 0 12px rgba(255, 255, 255, 0.65),
+    0 0 24px rgba(255, 255, 255, 0.4);
 }
 
 .cinema-gold-glow {
   text-shadow:
-    0 0 12px rgba(255, 107, 0, 0.65),
-    0 0 24px rgba(255, 184, 0, 0.4);
+    0 0 12px rgba(255, 255, 255, 0.65),
+    0 0 24px rgba(255, 255, 255, 0.4);
 }
 
 .cinema-green-glow {
   text-shadow:
-    0 0 12px rgba(255, 184, 0, 0.65),
-    0 0 24px rgba(255, 184, 0, 0.4);
+    0 0 12px rgba(255, 255, 255, 0.65),
+    0 0 24px rgba(255, 255, 255, 0.4);
 }
 
 .monsoon-glow {
   text-shadow:
-    0 0 12px rgba(255, 107, 0, 0.65),
-    0 0 24px rgba(255, 184, 0, 0.4);
+    0 0 12px rgba(255, 255, 255, 0.65),
+    0 0 24px rgba(255, 255, 255, 0.4);
 }
 
 .monsoon-chromatic-box {
   box-shadow:
     -2px 0px 0px #000000,
-    2px 0px 0px #DC143C;
+    2px 0px 0px #FFFFFF;
 }
 
 .tiktok-chromatic {
   text-shadow:
-    -1px -0.5px 0px rgba(255, 184, 0, 0.8),
-    1px 0.5px 0px rgba(255, 107, 0, 0.8);
+    -1px -0.5px 0px rgba(255, 255, 255, 0.8),
+    1px 0.5px 0px rgba(255, 255, 255, 0.8);
 }
 
 .tiktok-chromatic-box {
   box-shadow:
     -2px 0px 0px #000000,
-    2px 0px 0px #DC143C;
+    2px 0px 0px #FFFFFF;
 }
 
 .tiktok-card {
@@ -279,18 +279,18 @@
 }
 
 .tiktok-card:hover {
-  border-color: rgba(255, 107, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .tiktok-btn-primary {
-  background-color: #DC143C;
+  background-color: #FFFFFF;
   color: #ffffff;
   font-weight: 700;
   transition: all 0.15s ease;
 }
 
 .tiktok-btn-primary:hover {
-  background-color: #A40F2D;
+  background-color: #E5E5E5;
 }
 
 .tiktok-btn-primary:active {
@@ -299,14 +299,14 @@
 
 /* Now Playing — Cinema See More outline button */
 .cinema-btn-outline {
-  border: 1.5px solid #DC143C;
-  color: #DC143C;
-  background-color: rgba(255, 107, 0, 0.05);
+  border: 1.5px solid #FFFFFF;
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.05);
   transition: all 0.15s ease;
 }
 
 .cinema-btn-outline:hover {
-  background-color: #DC143C;
+  background-color: #FFFFFF;
   color: #ffffff;
 }
 
@@ -426,16 +426,16 @@
   --cinema-dark: #0b0f15;
   --cinema-card: #121820;
 }
-[data-theme="neon-noir"] [class*="bg-[#DC143C]"] {
+[data-theme="neon-noir"] [class*="bg-[#FFFFFF]"] {
   background-color: #f59e0b !important;
 }
-[data-theme="neon-noir"] [class*="text-[#DC143C]"] {
+[data-theme="neon-noir"] [class*="text-[#FFFFFF]"] {
   color: #f59e0b !important;
 }
-[data-theme="neon-noir"] [class*="border-[#DC143C]"] {
+[data-theme="neon-noir"] [class*="border-[#FFFFFF]"] {
   border-color: #f59e0b !important;
 }
-[data-theme="neon-noir"] [class*="fill-[#DC143C]"] {
+[data-theme="neon-noir"] [class*="fill-[#FFFFFF]"] {
   fill: #f59e0b !important;
 }
 [data-theme="neon-noir"] [class*="text-[#000000]"] {
@@ -506,9 +506,9 @@
 
 .apple-glass-input:focus {
   background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 107, 0, 0.6);
+  border-color: rgba(255, 255, 255, 0.6);
   box-shadow:
-    0 0 0 3px rgba(255, 107, 0, 0.25),
+    0 0 0 3px rgba(255, 255, 255, 0.25),
     inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
@@ -516,7 +516,7 @@
   background-color: #08090d;
   background-image:
     radial-gradient(at 10% 12%, rgba(99, 102, 241, 0.14) 0px, transparent 45%),
-    radial-gradient(at 90% 8%, rgba(255, 107, 0, 0.16) 0px, transparent 48%),
+    radial-gradient(at 90% 8%, rgba(255, 255, 255, 0.16) 0px, transparent 48%),
     radial-gradient(at 50% 50%, rgba(168, 85, 247, 0.09) 0px, transparent 55%),
     radial-gradient(at 85% 85%, rgba(0, 122, 255, 0.14) 0px, transparent 48%),
     radial-gradient(at 15% 85%, rgba(236, 72, 153, 0.1) 0px, transparent 45%);
@@ -717,7 +717,7 @@ button:active {
 .ig-heart-pop {
   animation: igHeartPop 0.95s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.9))
-    drop-shadow(0 0 40px rgba(255, 107, 0, 0.6));
+    drop-shadow(0 0 40px rgba(255, 255, 255, 0.6));
 }
 
 /* Like icon bounce when tapped */
@@ -874,13 +874,13 @@ button:active {
   0%,
   100% {
     box-shadow:
-      0 0 0 2px #DC143C,
-      0 0 0 4px rgba(255, 107, 0, 0.3);
+      0 0 0 2px #FFFFFF,
+      0 0 0 4px rgba(255, 255, 255, 0.3);
   }
   50% {
     box-shadow:
       0 0 0 2px #000000,
-      0 0 0 6px rgba(255, 184, 0, 0.4);
+      0 0 0 6px rgba(255, 255, 255, 0.4);
   }
 }
 
@@ -923,4 +923,18 @@ button:active {
 
 .notif-dot-enter {
   animation: notifDotEnter 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+/* X-style black & white: anything filled with the theme colour gets black text */
+[class*="bg-[var(--theme-color)]"],
+[class*="bg-[var(--theme-color)]"] *,
+.tiktok-btn-primary,
+.tiktok-btn-primary *,
+.cinema-btn-outline:hover,
+.cinema-btn-outline:hover * {
+  color: #000000 !important;
+}
+[class*="bg-[var(--theme-color)]/"],
+[class*="bg-[var(--theme-color)]/"] * {
+  color: inherit !important;
 }
