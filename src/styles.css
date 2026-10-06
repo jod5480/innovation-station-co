@@ -925,16 +925,12 @@ button:active {
   animation: notifDotEnter 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
-/* X-style black & white: anything filled with the theme colour gets black text */
-[class*="bg-[var(--theme-color)]"],
-[class*="bg-[var(--theme-color)]"] *,
+/* X-style black & white: solid theme-filled elements get black text */
+[class~="bg-[var(--theme-color)]"],
+[class~="bg-[var(--theme-color)]"] .text-white,
+[class~="bg-[var(--theme-color)]"] .text-foreground,
 .tiktok-btn-primary,
-.tiktok-btn-primary *,
-.cinema-btn-outline:hover,
-.cinema-btn-outline:hover * {
+.tiktok-btn-primary .text-white,
+.cinema-btn-outline:hover {
   color: #000000 !important;
-}
-[class*="bg-[var(--theme-color)]/"],
-[class*="bg-[var(--theme-color)]/"] * {
-  color: inherit !important;
 }
