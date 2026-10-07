@@ -29,6 +29,7 @@ import {
   Home,
   Search,
   MessageCircle,
+  Users,
 } from "lucide-react";
 
 import {
