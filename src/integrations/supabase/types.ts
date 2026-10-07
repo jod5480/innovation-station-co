@@ -678,6 +678,7 @@ export type Database = {
           charge_count: number
           created_at: string
           id: string
+          pinned: boolean
           reply_count: number
           title: string
           tribe_id: string
@@ -688,6 +689,7 @@ export type Database = {
           charge_count?: number
           created_at?: string
           id?: string
+          pinned?: boolean
           reply_count?: number
           title: string
           tribe_id: string
@@ -698,6 +700,7 @@ export type Database = {
           charge_count?: number
           created_at?: string
           id?: string
+          pinned?: boolean
           reply_count?: number
           title?: string
           tribe_id?: string
@@ -721,6 +724,8 @@ export type Database = {
       }
       tribes: {
         Row: {
+          category: string
+          cover_image: string
           created_at: string
           creator_id: string
           description: string
@@ -729,6 +734,8 @@ export type Database = {
           name: string
         }
         Insert: {
+          category?: string
+          cover_image?: string
           created_at?: string
           creator_id: string
           description?: string
@@ -737,6 +744,8 @@ export type Database = {
           name: string
         }
         Update: {
+          category?: string
+          cover_image?: string
           created_at?: string
           creator_id?: string
           description?: string
