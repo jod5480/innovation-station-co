@@ -60,7 +60,7 @@ import { PostDetailModal } from "./components/feed/PostDetailModal";
 import { getSavedLocation, distanceKm, type GeoLocation } from "./lib/geo";
 import { RegionFilterModal } from "./components/feed/RegionFilterModal";
 import { SettingsMenu } from "./components/profile/SettingsMenu";
-import { CastingExploreTab } from "./components/casting/CastingExploreTab";
+import { TribesTab } from "./components/tribes/TribesTab";
 import { SearchExploreTab } from "./components/explore/SearchExploreTab";
 import { ProfileView } from "./components/profile/ProfileView";
 import { NotificationsDrawer } from "./components/notifications/NotificationsDrawer";
@@ -882,7 +882,7 @@ function KinoApp({
             }
           }}
           className="flex flex-col items-center justify-center px-2 py-1 spring-scale shrink-0"
-          title="Casting Hub & Auditions"
+          title="Tribes"
         >
           <div
             className={`w-9 h-8 rounded-[12px] flex items-center justify-center shadow-md transition-all duration-200 ${
@@ -891,14 +891,14 @@ function KinoApp({
                 : "bg-muted hover:bg-black/20 text-neutral-300 border border-white/15"
             }`}
           >
-            <Film className="w-4 h-4 stroke-[1.5]" />
+            <Users className="w-4 h-4 stroke-[1.5]" />
           </div>
           <span
             className={`text-[9px] tracking-tight mt-0.5 font-semibold transition-colors duration-200 ${
               activeTab === "casting" ? "text-white" : "text-muted-foreground"
             }`}
           >
-            Casting
+            Tribes
           </span>
         </button>
 
@@ -1105,7 +1105,7 @@ function KinoApp({
                   : "text-neutral-500 hover:text-foreground"
               }`}
             >
-              <MonitorPlay className="w-4 h-4" strokeWidth={1.5} /> Casting
+              <Users className="w-4 h-4" strokeWidth={1.5} /> Tribes
             </button>
             <button
               onClick={() => {
@@ -1356,17 +1356,7 @@ function KinoApp({
                 {/* TAB 3: CASTING & AUDITIONS */}
                 {activeTab === "casting" && (
                   <div key="tab-casting" className="tab-content-enter">
-                    <CastingExploreTab
-                      posts={posts}
-                      currentUser={currentUser}
-                      onOpenApply={(p) => setActivePostForApply(p)}
-                      onOpenCreateCasting={() => {
-                        setCreateInitialMode("casting");
-                        setIsCreateOpen(true);
-                      }}
-                      onSaveToggle={handleSaveToggle}
-                      onUserClick={handleUserClick}
-                    />
+                    <TribesTab currentUser={currentUser} />
                   </div>
                 )}
 
