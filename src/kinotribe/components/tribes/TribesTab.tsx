@@ -91,7 +91,7 @@ export const TribesTab: React.FC<{ currentUser: User }> = ({ currentUser }) => {
     const on = charged.has(id);
     const col = kind === "thread" ? "thread_id" : "reply_id";
     if (on) await supabase.from("tribe_charges").delete().eq("user_id", uid).eq(col, id);
-    else await supabase.from("tribe_charges").insert({ user_id: uid, [col]: id });
+    else await supabase.from("tribe_charges").insert(kind === "thread" ? { user_id: uid, thread_id: id } : { user_id: uid, reply_id: id });
     const next = new Set(charged); on ? next.delete(id) : next.add(id); setCharged(next);
     const d = on ? -1 : 1;
     if (kind === "thread") {
