@@ -131,6 +131,45 @@ export async function uploadMedia(file: File): Promise<string> {
   }
 }
 
+export async function uploadProfileBanner(file: File): Promise<string> {
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  const userId = auth.user?.id;
+  if (authError || !userId) throw new Error("Sign in to update your banner.");
+
+  const extension = file.name.split(".").pop() || "jpg";
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+  const { error: uploadError } = await supabase.storage.from("media").upload(path, file, {
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (uploadError) throw uploadError;
+
+  const { data, error: signError } = await supabase.storage
+    .from("media")
+    .createSignedUrl(path, SIGNED_URL_TTL);
+  if (signError || !data?.signedUrl) {
+    throw signError ?? new Error("Could not create a banner link.");
+  }
+  return data.signedUrl;
+}
+
+export async function refreshProfileBannerUrl(value: string): Promise<string> {
+  try {
+    const url = new URL(value);
+    const marker = "/storage/v1/object/sign/media/";
+    const markerIndex = url.pathname.indexOf(marker);
+    if (markerIndex < 0) return value;
+
+    const path = decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
+    const { data, error } = await supabase.storage
+      .from("media")
+      .createSignedUrl(path, SIGNED_URL_TTL);
+    return error || !data?.signedUrl ? value : data.signedUrl;
+  } catch {
+    return value;
+  }
+}
+
 /* -------------------------------- mapping -------------------------------- */
 
 type ProfileRow = {
@@ -612,6 +651,34 @@ export async function toggleFollow(targetId: string, userId: string, follow: boo
   } else {
     await supabase.from("follows").delete().eq("follower_id", userId).eq("following_id", targetId);
   }
+}
+
+export async function getProfileConnections(
+  profileId: string,
+  kind: "followers" | "following",
+): Promise<User[]> {
+  const column = kind === "followers" ? "follower_id" : "following_id";
+  const relatedColumn = kind === "followers" ? "following_id" : "follower_id";
+  const { data: followRows, error: followError } = await supabase
+    .from("follows")
+    .select("follower_id, following_id")
+    .eq(column, profileId);
+  if (followError) throw followError;
+
+  const relatedIds = [...new Set((followRows ?? []).map((row) => row[relatedColumn]))];
+  if (relatedIds.length === 0) return [];
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("*")
+    .in("id", relatedIds);
+  if (profilesError) throw profilesError;
+
+  const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+  return relatedIds
+    .map((id) => profilesById.get(id))
+    .filter((profile): profile is NonNullable<typeof profile> => Boolean(profile))
+    .map((profile) => mapProfile(profile as ProfileRow));
 }
 
 export async function addComment(postId: string, userId: string, text: string) {

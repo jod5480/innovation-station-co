@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { User, Post, Application, CinemaRole, ExperienceLevel } from "../../types";
-import { uploadMedia } from "../../lib/api";
+import * as api from "../../lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
   Film,
@@ -60,6 +68,7 @@ interface ProfileViewProps {
   onOpenMessage: (user: User) => void;
   onPostClick: (post: Post) => void;
   onUpdateProfile: (updated: User) => void;
+  onOpenUser: (user: User) => void;
   onOpenApply: (post: Post) => void;
   onOpenAuthModal?: (mode?: "login" | "signup") => void;
   feedMode?: "regional" | "global" | "custom" | "nearby";
@@ -82,6 +91,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onOpenMessage,
   onPostClick,
   onUpdateProfile,
+  onOpenUser,
   onOpenApply,
   onOpenAuthModal,
   feedMode = "regional",
@@ -98,11 +108,54 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [portfolioCopied, setPortfolioCopied] = useState(false);
+  const [connectionsOpen, setConnectionsOpen] = useState(false);
+  const [connectionsType, setConnectionsType] = useState<"followers" | "following">("followers");
+  const [connections, setConnections] = useState<User[]>([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
+  const [connectionsError, setConnectionsError] = useState("");
 
   // Banner state
   const [editBannerUrl, setEditBannerUrl] = useState(user.coverImage || "");
   const [bannerPreview, setBannerPreview] = useState(user.coverImage || "");
   const bannerInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    setEditBannerUrl(user.coverImage || "");
+    setBannerPreview(user.coverImage || "");
+    if (!isMe || !user.coverImage) return;
+
+    void api.refreshProfileBannerUrl(user.coverImage).then((freshUrl) => {
+      if (cancelled || freshUrl === user.coverImage) return;
+      setEditBannerUrl(freshUrl);
+      setBannerPreview(freshUrl);
+      onUpdateProfile({ ...user, coverImage: freshUrl });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isMe, onUpdateProfile, user]);
+
+  React.useEffect(() => {
+    if (!connectionsOpen) return;
+    let cancelled = false;
+    setConnectionsLoading(true);
+    setConnectionsError("");
+    void api
+      .getProfileConnections(user.id, connectionsType)
+      .then((items) => {
+        if (!cancelled) setConnections(items);
+      })
+      .catch(() => {
+        if (!cancelled) setConnectionsError("Could not load this list. Please try again.");
+      })
+      .finally(() => {
+        if (!cancelled) setConnectionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [connectionsOpen, connectionsType, user.id]);
 
   const handleBannerFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -110,12 +163,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     const objectUrl = URL.createObjectURL(file);
     setBannerPreview(objectUrl);
     try {
-      const url = await uploadMedia(file);
+      const url = await api.uploadProfileBanner(file);
       setBannerPreview(url);
       setEditBannerUrl(url);
       onUpdateProfile({ ...user, coverImage: url });
     } catch (err) {
+      setBannerPreview(user.coverImage || "");
       alert("Could not upload banner: " + (err as Error).message);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      e.target.value = "";
     }
   };
 
@@ -125,7 +182,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const url = await uploadMedia(file);
+      const url = await api.uploadMedia(file);
       onUpdateProfile({ ...user, avatar: url });
     } catch (err) {
       alert("Could not upload photo: " + (err as Error).message);
@@ -239,10 +296,76 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         onChange={handleBannerFileChange}
       />
 
+      <Dialog open={connectionsOpen} onOpenChange={setConnectionsOpen}>
+        <DialogContent className="max-h-[80dvh] overflow-hidden border-border bg-background p-0 text-foreground sm:max-w-md">
+          <DialogHeader className="border-b border-border px-4 pb-3 pt-5 text-left">
+            <DialogTitle>{user.name}</DialogTitle>
+            <DialogDescription>
+              @{user.username} · {connectionsType === "followers" ? "Followers" : "Following"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2 px-4 pt-2">
+            <Button
+              type="button"
+              variant={connectionsType === "followers" ? "secondary" : "ghost"}
+              onClick={() => setConnectionsType("followers")}
+              className="h-10"
+            >
+              Followers <span className="font-bold">{user.followersCount}</span>
+            </Button>
+            <Button
+              type="button"
+              variant={connectionsType === "following" ? "secondary" : "ghost"}
+              onClick={() => setConnectionsType("following")}
+              className="h-10"
+            >
+              Following <span className="font-bold">{user.followingCount}</span>
+            </Button>
+          </div>
+          <div className="min-h-40 overflow-y-auto px-3 pb-4 pt-2">
+            {connectionsLoading ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">Loading…</p>
+            ) : connectionsError ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">{connectionsError}</p>
+            ) : connections.length === 0 ? (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                {connectionsType === "followers" ? "No followers yet." : "Not following anyone yet."}
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {connections.map((person) => (
+                  <li key={person.id}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setConnectionsOpen(false);
+                        onOpenUser(person);
+                      }}
+                      className="h-auto w-full justify-start gap-3 rounded-none px-2 py-3 text-left"
+                    >
+                      <img
+                        src={person.avatar}
+                        alt=""
+                        className="h-11 w-11 shrink-0 rounded-full border border-border object-cover"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">{person.username}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{person.name}</span>
+                      </span>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Profile Header with Banner */}
       <div className="rounded-[28px] apple-glass-card border border-white/14 overflow-hidden shadow-2xl pb-4 space-y-3">
         {/* ── Banner strip ── */}
-        <div className="relative w-full h-28 bg-gradient-to-br from-[#1a0a2e] via-[#2d0a4e] to-[#0a0a1a] overflow-hidden">
+        <div className="relative w-full h-28 bg-muted overflow-hidden">
           {bannerPreview || user.coverImage ? (
             <img
               src={bannerPreview || user.coverImage}
@@ -250,18 +373,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               className="w-full h-full object-cover pointer-events-none select-none"
             />
           ) : (
-            /* Cinematic default banner gradient */
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1a0033] via-[#3b0082] to-[#0d1117] pointer-events-none">
-              <div
-                className="absolute inset-0 opacity-20"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(131,58,180,0.15) 20px, rgba(131,58,180,0.15) 21px)",
-                }}
-              />
-              <div className="absolute bottom-3 left-4 flex items-center gap-2 opacity-40">
-                <Film className="w-4 h-4 text-[var(--theme-color)]" />
-                <span className="text-[11px] font-mono text-[var(--theme-color)] tracking-widest uppercase">
+            <div className="absolute inset-0 flex items-end bg-muted pointer-events-none">
+              <div className="absolute bottom-3 left-4 flex items-center gap-2 text-muted-foreground">
+                <Film className="w-4 h-4" />
+                <span className="text-[11px] font-mono uppercase">
                   Your Banner
                 </span>
               </div>
@@ -310,18 +425,30 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 </span>
                 <span className="text-[12px] text-muted-foreground">posts</span>
               </div>
-              <div>
-                <span className="block text-[17px] font-bold text-foreground font-brand">
-                  {user.followersCount}
-                </span>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setConnectionsType("followers");
+                  setConnectionsOpen(true);
+                }}
+                className="h-auto flex-col gap-0 px-2 py-1 text-foreground"
+              >
+                <span className="text-[17px] font-bold font-brand">{user.followersCount}</span>
                 <span className="text-[12px] text-muted-foreground">followers</span>
-              </div>
-              <div>
-                <span className="block text-[17px] font-bold text-foreground font-brand">
-                  {user.followingCount}
-                </span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setConnectionsType("following");
+                  setConnectionsOpen(true);
+                }}
+                className="h-auto flex-col gap-0 px-2 py-1 text-foreground"
+              >
+                <span className="text-[17px] font-bold font-brand">{user.followingCount}</span>
                 <span className="text-[12px] text-muted-foreground">following</span>
-              </div>
+              </Button>
             </div>
           </div>
 
@@ -811,7 +938,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto bg-[#121212]">
               {/* Banner edit row */}
-              <div className="relative w-full h-24 bg-gradient-to-br from-[#1a0033] via-[#3b0082] to-[#0d1117] group overflow-hidden border-b border-white/[0.07]">
+              <div className="relative w-full h-24 bg-muted group overflow-hidden border-b border-border">
                 {(bannerPreview || user.coverImage) && (
                   <img
                     src={bannerPreview || user.coverImage}
@@ -821,7 +948,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 )}
                 <button
                   onClick={() => bannerInputRef.current?.click()}
-                  className="absolute inset-0 bg-background/0 group-hover:bg-background/50 flex flex-col items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-background/40 text-foreground opacity-100 transition-colors group-hover:bg-background/60"
                 >
                   <Camera className="w-5 h-5 text-foreground" />
                   <span className="text-[11px] text-foreground font-semibold">Change banner</span>

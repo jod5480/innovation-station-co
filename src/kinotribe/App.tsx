@@ -298,6 +298,24 @@ function KinoApp({
     setFollowingIds(d.followingIds);
   };
 
+  const handleProfileUpdate = React.useCallback((updated: User) => {
+    setCurrentUser(updated);
+    setViewedProfileUser(updated);
+    void api
+      .updateProfile(me.id, {
+        name: updated.name,
+        bio: updated.bio,
+        roles: updated.roles,
+        experience_level: updated.experienceLevel,
+        showreel_video_url: updated.showreelVideoUrl || null,
+        imdb_url: updated.imdbUrl || null,
+        portfolio_url: updated.portfolioUrl || null,
+        avatar: updated.avatar || null,
+        cover_image: updated.coverImage || null,
+      })
+      .catch((e) => alert("Could not save profile: " + e.message));
+  }, [me.id]);
+
   const handleStoryCreated = async (
     mediaUrl: string,
     caption: string,
@@ -1378,22 +1396,9 @@ function KinoApp({
                       }}
                       onPostClick={(p) => setActivePostForDetail(p)}
                       onUpdateProfile={(updated) => {
-                        setCurrentUser(updated);
-                        setViewedProfileUser(updated);
-                        api
-                          .updateProfile(me.id, {
-                            name: updated.name,
-                            bio: updated.bio,
-                            roles: updated.roles,
-                            experience_level: updated.experienceLevel,
-                            showreel_video_url: updated.showreelVideoUrl || null,
-                            imdb_url: updated.imdbUrl || null,
-                            portfolio_url: updated.portfolioUrl || null,
-                            avatar: updated.avatar || null,
-                            cover_image: updated.coverImage || null,
-                          })
-                          .catch((e) => alert("Could not save profile: " + e.message));
+                        handleProfileUpdate(updated);
                       }}
+                      onOpenUser={handleUserClick}
                       onOpenApply={(p) => setActivePostForApply(p)}
                       onOpenAuthModal={async () => {
                         if (confirm("Sign out of Cinetribe?")) {
