@@ -1395,9 +1395,7 @@ function KinoApp({
                         handleOpenMessage(u);
                       }}
                       onPostClick={(p) => setActivePostForDetail(p)}
-                      onUpdateProfile={(updated) => {
-                        handleProfileUpdate(updated);
-                      }}
+                      onUpdateProfile={handleProfileUpdate}
                       onOpenUser={handleUserClick}
                       onOpenApply={(p) => setActivePostForApply(p)}
                       onOpenAuthModal={async () => {

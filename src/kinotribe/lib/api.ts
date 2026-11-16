@@ -160,6 +160,16 @@ export async function refreshProfileBannerUrl(value: string): Promise<string> {
     const markerIndex = url.pathname.indexOf(marker);
     if (markerIndex < 0) return value;
 
+    const token = url.searchParams.get("token");
+    const payload = token?.split(".")[1];
+    if (payload) {
+      const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const claims = JSON.parse(atob(normalizedPayload)) as { exp?: number };
+      if (claims.exp && claims.exp > Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60) {
+        return value;
+      }
+    }
+
     const path = decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
     const { data, error } = await supabase.storage
       .from("media")
