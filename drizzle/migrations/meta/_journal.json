@@ -15,6 +15,13 @@
       "when": 1791400955139,
       "tag": "0001_tribe_film_clubs",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794865035708,
+      "tag": "0002_limit_tribe_membership_visibility",
+      "breakpoints": true
     }
   ]
 }
