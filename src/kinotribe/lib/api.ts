@@ -667,8 +667,8 @@ export async function getProfileConnections(
   profileId: string,
   kind: "followers" | "following",
 ): Promise<User[]> {
-  const column = kind === "followers" ? "follower_id" : "following_id";
-  const relatedColumn = kind === "followers" ? "following_id" : "follower_id";
+  const column = kind === "followers" ? "following_id" : "follower_id";
+  const relatedColumn = kind === "followers" ? "follower_id" : "following_id";
   const { data: followRows, error: followError } = await supabase
     .from("follows")
     .select("follower_id, following_id")
