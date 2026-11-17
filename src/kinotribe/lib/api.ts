@@ -684,11 +684,28 @@ export async function getProfileConnections(
     .in("id", relatedIds);
   if (profilesError) throw profilesError;
 
+  const { data: allFollowRows, error: countsError } = await supabase
+    .from("follows")
+    .select("follower_id, following_id");
+  if (countsError) throw countsError;
+
+  const followerCounts = new Map<string, number>();
+  const followingCounts = new Map<string, number>();
+  for (const row of allFollowRows ?? []) {
+    followerCounts.set(row.following_id, (followerCounts.get(row.following_id) ?? 0) + 1);
+    followingCounts.set(row.follower_id, (followingCounts.get(row.follower_id) ?? 0) + 1);
+  }
+
   const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
   return relatedIds
     .map((id) => profilesById.get(id))
     .filter((profile): profile is NonNullable<typeof profile> => Boolean(profile))
-    .map((profile) => mapProfile(profile as ProfileRow));
+    .map((profile) =>
+      mapProfile(profile as ProfileRow, {
+        followers: followerCounts.get(profile.id) ?? 0,
+        following: followingCounts.get(profile.id) ?? 0,
+      }),
+    );
 }
 
 export async function addComment(postId: string, userId: string, text: string) {
