@@ -62,8 +62,8 @@
 }
 
 :root {
-  --theme-color: #FFFFFF;
-  --theme-hover: #E5E5E5;
+  --theme-color: #FF5C38;
+  --theme-hover: #E0492B;
   --radius: 0.625rem;
   --background: oklch(1 0 0); /* White */
   --foreground: oklch(0.1 0 0); /* Almost Black */
@@ -71,19 +71,19 @@
   --card-foreground: oklch(0.1 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.1 0 0);
-  --primary: oklch(1 0 0); /* Crimson Red */
-  --primary-foreground: oklch(0 0 0); /* White */
+  --primary: oklch(0.637 0.208 34); /* Lovable coral */
+  --primary-foreground: oklch(1 0 0); /* White */
   --secondary: oklch(0.9 0 0); /* Light Gray */
   --secondary-foreground: oklch(0.1 0 0);
   --muted: oklch(0.95 0 0);
   --muted-foreground: oklch(0.4 0 0);
-  --accent: oklch(1 0 0); /* Crimson Red */
-  --accent-foreground: oklch(0 0 0); /* White */
-  --destructive: oklch(1 0 0);
+  --accent: oklch(0.637 0.208 34); /* Lovable coral */
+  --accent-foreground: oklch(1 0 0); /* White */
+  --destructive: oklch(0.577 0.245 27);
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
-  --ring: oklch(1 0 0);
+  --ring: oklch(0.637 0.208 34);
   --chart-1: oklch(1 0 0);
   --chart-2: oklch(0.1 0 0);
   --chart-3: oklch(0.3 0 0);
@@ -201,8 +201,8 @@
     -moz-osx-font-smoothing: grayscale;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-    background-color: #000000;
-    color: #ffffff;
+    background-color: #ffffff;
+    color: #0f0f0f;
   }
 
   .font-brand {
@@ -283,14 +283,14 @@
 }
 
 .tiktok-btn-primary {
-  background-color: #FFFFFF;
+  background-color: var(--theme-color);
   color: #ffffff;
   font-weight: 700;
   transition: all 0.15s ease;
 }
 
 .tiktok-btn-primary:hover {
-  background-color: #E5E5E5;
+  background-color: var(--theme-hover);
 }
 
 .tiktok-btn-primary:active {
@@ -299,14 +299,14 @@
 
 /* Now Playing — Cinema See More outline button */
 .cinema-btn-outline {
-  border: 1.5px solid #FFFFFF;
-  color: #FFFFFF;
-  background-color: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid #0f0f0f;
+  color: #0f0f0f;
+  background-color: rgba(0, 0, 0, 0.03);
   transition: all 0.15s ease;
 }
 
 .cinema-btn-outline:hover {
-  background-color: #FFFFFF;
+  background-color: #0f0f0f;
   color: #ffffff;
 }
 
@@ -925,24 +925,216 @@ button:active {
   animation: notifDotEnter 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
-/* X-style black & white: solid theme-filled elements get black text */
+/* Solid theme-filled (coral) elements get white text */
 [class~="bg-[var(--theme-color)]"],
 [class~="bg-[var(--theme-color)]"] .text-white,
 [class~="bg-[var(--theme-color)]"] .text-foreground,
 .tiktok-btn-primary,
 .tiktok-btn-primary .text-white,
 .cinema-btn-outline:hover {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
-/* Ensure icons/text on solid white theme fills are black */
+/* Ensure icons/text on solid theme fills are white */
 [class~="bg-[var(--theme-color)]"] *,
 [class~="bg-[var(--theme-color)]"] svg {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 [class*="bg-purple-"],[class*="bg-emerald-"],[class*="bg-blue-"],[class*="bg-red-"],[class*="bg-orange-"],[class*="bg-amber-"],[class*="bg-pink-"],[class*="bg-rose-"],[class*="bg-indigo-"] {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 [class*="text-purple-"],[class*="text-emerald-"],[class*="text-blue-"],[class*="text-orange-"],[class*="text-amber-"],[class*="text-pink-"],[class*="text-rose-"],[class*="text-indigo-"] {
   color: #ffffff !important;
+}
+
+/* =========================================================
+   WHITE LOVABLE LIGHT THEME — global overrides
+   White background, near-black text, coral accent.
+   ========================================================= */
+
+/* Dark hardcoded surfaces -> light */
+[class~="bg-[#121212]"],
+[class~="bg-[#0E1118]"],
+[class~="bg-[#0b0f15]"],
+[class~="bg-[#0B0F15]"],
+[class~="bg-[#1c1c1e]"],
+[class~="bg-[#1C1C1E]"],
+[class~="bg-[#1c1c1c]"],
+[class~="bg-[#141416]"],
+[class~="bg-[#0a0a0c]"],
+[class~="bg-black"] {
+  background-color: #ffffff !important;
+}
+[class~="bg-[#262626]"] {
+  background-color: #f0f0f0 !important;
+}
+
+/* White text -> near-black on light surfaces */
+[class~="text-white"],
+[class~="text-[#FAF9F5]"] {
+  color: #0f0f0f !important;
+}
+
+/* Keep white text on solid coral theme fills (must come after the rule above) */
+[class~="bg-[var(--theme-color)]"],
+[class~="bg-[var(--theme-color)]"] *,
+[class~="bg-[var(--theme-color)]"] svg,
+.tiktok-btn-primary,
+.tiktok-btn-primary * {
+  color: #ffffff !important;
+}
+
+/* White borders -> soft dark borders */
+[class~="border-white/5"] { border-color: rgba(0, 0, 0, 0.06) !important; }
+[class~="border-white/8"] { border-color: rgba(0, 0, 0, 0.08) !important; }
+[class~="border-white/10"] { border-color: rgba(0, 0, 0, 0.1) !important; }
+[class~="border-white/15"] { border-color: rgba(0, 0, 0, 0.14) !important; }
+[class~="border-white/20"] { border-color: rgba(0, 0, 0, 0.18) !important; }
+[class~="border-white/50"] { border-color: rgba(0, 0, 0, 0.4) !important; }
+[class~="border-[#363636]"],
+[class~="border-[#1C202A]"],
+[class~="border-[#121212]"] {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Translucent white surfaces -> translucent dark */
+[class~="bg-white/5"] { background-color: rgba(0, 0, 0, 0.04) !important; }
+[class~="bg-white/8"],
+[class~="bg-white/10"] { background-color: rgba(0, 0, 0, 0.06) !important; }
+[class~="bg-white/15"],
+[class~="bg-white/20"] { background-color: rgba(0, 0, 0, 0.1) !important; }
+
+/* Theme variable surfaces -> light */
+:root {
+  --cinema-dark: #ffffff;
+  --cinema-card: #ffffff;
+  --cinema-card-elevated: #f5f5f5;
+  --cinema-secondary: #6b7280;
+  --tiktok-card: #ffffff;
+  --tiktok-black: #ffffff;
+  --tiktok-secondary: #6b7280;
+  --monsoon-dark: #ffffff;
+  --monsoon-card: #ffffff;
+  --monsoon-secondary: #6b7280;
+}
+
+.tiktok-card {
+  background-color: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.tiktok-card:hover {
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+/* Glass surfaces -> light glass */
+.ios-glass-dark {
+  background-color: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.apple-glass {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 8px 32px 0 rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+}
+.apple-glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 16px 40px 0 rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+}
+.apple-glass-card:hover {
+  border-color: rgba(0, 0, 0, 0.16);
+}
+.apple-glass-dock {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 20px 60px 0 rgba(0, 0, 0, 0.18),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.6);
+}
+.apple-glass-subtle {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.apple-glass-input {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.apple-glass-input:focus {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: var(--theme-color);
+  box-shadow:
+    0 0 0 3px rgba(255, 92, 56, 0.25),
+    inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.apple-mesh-bg {
+  background-color: #fafafa;
+  background-image:
+    radial-gradient(at 10% 12%, rgba(255, 92, 56, 0.08) 0px, transparent 45%),
+    radial-gradient(at 90% 8%, rgba(255, 92, 56, 0.06) 0px, transparent 48%),
+    radial-gradient(at 50% 50%, rgba(0, 0, 0, 0.03) 0px, transparent 55%),
+    radial-gradient(at 85% 85%, rgba(255, 92, 56, 0.05) 0px, transparent 48%),
+    radial-gradient(at 15% 85%, rgba(0, 0, 0, 0.02) 0px, transparent 45%);
+}
+
+/* Segmented controls -> light */
+.apple-segmented-group {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.apple-segmented-item {
+  color: #6b7280;
+}
+.apple-segmented-item:hover {
+  color: #0f0f0f;
+}
+.apple-segmented-item-active {
+  color: #0f0f0f !important;
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.12),
+    inset 0 0.5px 0.5px rgba(255, 255, 255, 0.8);
+}
+.apple-segmented-slider {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+/* Story ring + glows -> coral on white */
+@keyframes storyRingPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--theme-color),
+      0 0 0 4px rgba(255, 92, 56, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px var(--theme-color),
+      0 0 0 6px rgba(255, 92, 56, 0.4);
+  }
+}
+
+.cinema-orange-glow,
+.cinema-amber-glow,
+.cinema-gold-glow,
+.cinema-green-glow,
+.monsoon-glow {
+  text-shadow:
+    0 0 12px rgba(255, 92, 56, 0.45),
+    0 0 24px rgba(255, 92, 56, 0.25);
+}
+
+.film-strip-border {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.12) 35%, transparent 40%);
 }

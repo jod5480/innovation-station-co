@@ -244,9 +244,9 @@ function KinoApp({
   >("all");
 
   useEffect(() => {
-    document.documentElement.classList.add("dark");
-    
-    // Single black & white theme — clear any old saved colour
+    document.documentElement.classList.remove("dark");
+
+    // Single white theme — clear any old saved colour
     localStorage.removeItem("app_theme_color");
     localStorage.removeItem("app_theme_hover");
     document.documentElement.style.removeProperty("--theme-color");
