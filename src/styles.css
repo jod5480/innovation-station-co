@@ -1138,3 +1138,13 @@ button:active {
 .film-strip-border {
   background-image: radial-gradient(circle, rgba(0, 0, 0, 0.12) 35%, transparent 40%);
 }
+
+/* Light theme: light-grey text classes -> readable greys on white */
+[class~="text-neutral-100"],
+[class~="text-neutral-200"] { color: #171717 !important; }
+[class~="text-neutral-300"] { color: #404040 !important; }
+[class~="text-neutral-400"] { color: #5f5f5f !important; }
+[class~="text-neutral-500"] { color: #6b6b6b !important; }
+[class*="text-white/"] { color: #555555 !important; }
+[class~="bg-[var(--theme-color)]"] [class*="text-neutral-"],
+[class~="bg-[var(--theme-color)]"] [class*="text-white/"] { color: #ffffff !important; }
